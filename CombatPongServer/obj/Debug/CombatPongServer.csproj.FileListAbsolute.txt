@@ -1,0 +1,5 @@
+C:\git\CombatPong\CombatPongServer\bin\CombatPongServer.dll
+C:\git\CombatPong\CombatPongServer\bin\CombatPongServer.pdb
+C:\git\CombatPong\CombatPongServer\obj\Debug\CombatPongServer.csprojResolveAssemblyReference.cache
+C:\git\CombatPong\CombatPongServer\obj\Debug\CombatPongServer.dll
+C:\git\CombatPong\CombatPongServer\obj\Debug\CombatPongServer.pdb
