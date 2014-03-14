@@ -21,6 +21,108 @@ var CombatPong;
     CombatPong.Game = Game;
     ;
 })(CombatPong || (CombatPong = {}));
+var CombatPong;
+(function (CombatPong) {
+    var GameObject = (function () {
+        function GameObject(stageData) {
+            this.stageData = stageData;
+        }
+        GameObject.prototype.generateGraphic = function () {
+        };
+        GameObject.prototype.sendCollisionMessage = function (receiver, response) {
+        };
+        GameObject.prototype.checkForCollision = function () {
+            return false;
+        };
+        return GameObject;
+    })();
+    CombatPong.GameObject = GameObject;
+})(CombatPong || (CombatPong = {}));
+var CombatPong;
+(function (CombatPong) {
+    var InteractiveGraphic = (function () {
+        function InteractiveGraphic(stageData, graphic, parent) {
+            this.stageData = stageData;
+            this.graphic = graphic;
+            this.parent = parent;
+            this.satResponse = new SAT.Response();
+        }
+        InteractiveGraphic.prototype.resetCollisionData = function () {
+            this.minX = Number.MAX_VALUE;
+            this.maxX = Number.MIN_VALUE;
+            this.satCircles = [];
+            this.satPolygons = [];
+        };
+        InteractiveGraphic.prototype.considerPointForMinMax = function (xPoint) {
+            if (xPoint < this.minX)
+                this.minX = xPoint;
+            if (xPoint > this.maxX)
+                this.maxX = xPoint;
+        };
+        InteractiveGraphic.prototype.mapPoints = function () {
+            //generates the min max and converts point to SAT format (could not be casted, potential speed boost here but the points need to be analyzed for min max anyways so its not that big. Casting would require modifying SAT.js Vector class)
+            this.resetCollisionData();
+            for (var child in this.graphic.getChildren()) {
+                if (CombatPong.Util.isCircle(child)) {
+                    var circleChild = child;
+                    this.considerPointForMinMax(circleChild.x() - circleChild.radius());
+                    this.considerPointForMinMax(circleChild.x() + circleChild.radius());
+                    this.satCircles.push(new SAT.Circle(new SAT.Vector(circleChild.x(), circleChild.y()), circleChild.radius()));
+                } else if (CombatPong.Util.isPolygon(child)) {
+                    var polygonChild = child;
+                    var polygonSATPoints = [];
+                    for (var i = 0; i < polygonChild.points().length / 2; ++i) {
+                        var x = polygonChild.points()[i * 2];
+                        var y = polygonChild.points()[i * 2 + 1];
+                        polygonSATPoints.push(new SAT.Vector(x, y));
+                        this.considerPointForMinMax(x);
+                    }
+                    var satPolygon = new SAT.Polygon(new SAT.Vector(0, 0), polygonSATPoints);
+                    this.satPolygons.push(satPolygon);
+                }
+            }
+        };
+        InteractiveGraphic.prototype.roughCollisionTest = function (otherGraphic) {
+            var min = this.minX;
+            var max = this.maxX;
+            var leftBound = otherGraphic.minX;
+            var rightBound = otherGraphic.maxX;
+            if (CombatPong.Util.isNumberWithinBounds(min, leftBound, rightBound))
+                return true;
+            if (CombatPong.Util.isNumberWithinBounds(max, leftBound, rightBound))
+                return true;
+            return false;
+        };
+        InteractiveGraphic.prototype.SATcollisionTest = function (otherGraphic) {
+            //Check each component with each other component. n^2, so don't have hundreds of collidable vectors within objects. You can do a rough polygon and make it invisible if this is a problem.
+            this.satResponse = new SAT.Response();
+            for (var circle in this.satCircles) {
+                for (var otherCircle in otherGraphic.satCircles) {
+                    if (SAT.testCircleCircle(circle, otherCircle, this.satResponse))
+                        return true;
+                }
+                for (var otherPolygon in otherGraphic.satPolygons) {
+                    if (SAT.testCirclePolygon(circle, otherPolygon, this.satResponse))
+                        return true;
+                }
+            }
+            for (var polygon in this.satPolygons) {
+                for (var otherCircle in otherGraphic.satCircles) {
+                    if (SAT.testPolygonCircle(polygon, otherCircle, this.satResponse))
+                        return true;
+                }
+                for (var otherPolygon in otherGraphic.satPolygons) {
+                    if (SAT.testPolygonPolygon(polygon, otherPolygon, this.satResponse))
+                        return true;
+                }
+            }
+            return false;
+        };
+        return InteractiveGraphic;
+    })();
+    CombatPong.InteractiveGraphic = InteractiveGraphic;
+    ;
+})(CombatPong || (CombatPong = {}));
 var MWG;
 (function (MWG) {
     (function (ButtonCode) {
@@ -200,61 +302,29 @@ var CombatPong;
 })(CombatPong || (CombatPong = {}));
 var CombatPong;
 (function (CombatPong) {
-    (function (CollisionID) {
-        CollisionID[CollisionID["nothing"] = 0] = "nothing";
-        CollisionID[CollisionID["wall"] = 1] = "wall";
-        CollisionID[CollisionID["paddle"] = 2] = "paddle";
-    })(CombatPong.CollisionID || (CombatPong.CollisionID = {}));
-    var CollisionID = CombatPong.CollisionID;
-    ;
-
-    var VectorGraphic = (function () {
-        function VectorGraphic(stageData) {
-            this.stageData = stageData;
-            this.graphic = new Kinetic.Group();
-            this.collisionID = 0 /* nothing */;
+    var Util = (function () {
+        function Util() {
         }
-        VectorGraphic.prototype.resetMinMax = function () {
-            this.minX = Number.MAX_VALUE;
-            this.maxX = Number.MIN_VALUE;
+        Util.isNumberWithinBounds = function (num, leftBound, rightBound) {
+            if (num > leftBound && num < rightBound)
+                return true;
+            return false;
         };
-        VectorGraphic.prototype.considerPointForMinMax = function (xPoint) {
-            if (xPoint < this.minX)
-                this.minX = xPoint;
-            if (xPoint > this.maxX)
-                this.maxX = xPoint;
-        };
-        VectorGraphic.prototype.mapPoints = function () {
-            this.resetMinMax();
 
-            for (var child in this.graphic.getChildren()) {
-                var type = child.getClassName();
-                if (type == "Circle") {
-                    var circleChild = child;
-                    this.considerPointForMinMax(circleChild.x() - circleChild.radius());
-                    this.considerPointForMinMax(circleChild.x() + circleChild.radius());
-                } else {
-                    var polygonChild = child;
-                    for (var i = 0; i < polygonChild.points().length / 2; ++i) {
-                        var x = polygonChild.points()[i * 2];
-                        var y = polygonChild.points()[i * 2 + 1];
-                        this.considerPointForMinMax(x);
-                        //add to sat
-                    }
-                }
-            }
+        Util.isCircle = function (obj) {
+            var type = obj.getClassName();
+            if (type == "Circle")
+                return true;
+            return false;
         };
-        VectorGraphic.prototype.roughCollisionTest = function (otherGraphic) {
-            if (this.collisionID == 0 /* nothing */ || otherGraphic.collisionID == 0 /* nothing */)
-                return;
+        Util.isPolygon = function (obj) {
+            var type = obj.getClassName();
+            if (type == "Line")
+                return true;
+            return false;
         };
-        VectorGraphic.prototype.collisionTest = function (otherGraphic) {
-            if (this.collisionID == 0 /* nothing */ || otherGraphic.collisionID == 0 /* nothing */)
-                return;
-        };
-        return VectorGraphic;
+        return Util;
     })();
-    CombatPong.VectorGraphic = VectorGraphic;
-    ;
+    CombatPong.Util = Util;
 })(CombatPong || (CombatPong = {}));
 //# sourceMappingURL=all.js.map

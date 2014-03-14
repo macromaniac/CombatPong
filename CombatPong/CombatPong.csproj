@@ -28,15 +28,18 @@
     <Content Include="web.config" />
   </ItemGroup>
   <ItemGroup>
+    <TypeScriptCompile Include="Sat.d.ts" />
     <TypeScriptCompile Include="Src\app.ts" />
     <TypeScriptCompile Include="jquery.d.ts" />
     <TypeScriptCompile Include="kinetic.d.ts" />
     <TypeScriptCompile Include="Src\Game.ts" />
+    <TypeScriptCompile Include="Src\GameObject.ts" />
+    <TypeScriptCompile Include="Src\InteractiveGraphic.ts" />
     <TypeScriptCompile Include="Src\KeyMan.ts" />
     <TypeScriptCompile Include="Src\Screen.ts" />
     <TypeScriptCompile Include="socket.io-client.d.ts" />
     <TypeScriptCompile Include="Src\StageData.ts" />
-    <TypeScriptCompile Include="Src\VectorGraphic.ts" />
+    <TypeScriptCompile Include="Src\UtilityFunctions.ts" />
   </ItemGroup>
   <ItemGroup>
     <None Include="web.Debug.config">
