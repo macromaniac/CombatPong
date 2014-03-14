@@ -20,19 +20,23 @@
     <Content Include="app.css" />
     <Content Include="index.html" />
     <Content Include="jquery-1.11.0.min.js" />
-    <Content Include="Src\KeyMan.js" />
     <Content Include="kinetic-v5.0.1.min.js" />
     <Content Include="peer.js" />
     <Content Include="SAT.min.js" />
     <Content Include="socket.io.js" />
+    <Content Include="Src\Readme.TXT" />
     <Content Include="web.config" />
   </ItemGroup>
   <ItemGroup>
-    <TypeScriptCompile Include="app.ts" />
+    <TypeScriptCompile Include="Src\app.ts" />
     <TypeScriptCompile Include="jquery.d.ts" />
     <TypeScriptCompile Include="kinetic.d.ts" />
+    <TypeScriptCompile Include="Src\Game.ts" />
+    <TypeScriptCompile Include="Src\KeyMan.ts" />
     <TypeScriptCompile Include="Src\Screen.ts" />
     <TypeScriptCompile Include="socket.io-client.d.ts" />
+    <TypeScriptCompile Include="Src\StageData.ts" />
+    <TypeScriptCompile Include="Src\VectorGraphic.ts" />
   </ItemGroup>
   <ItemGroup>
     <None Include="web.Debug.config">

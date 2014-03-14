@@ -1,0 +1,10 @@
+{
+  "name": "CombatPongServer",
+  "version": "0.0.0",
+  "description": "CombatPongServer",
+  "main": "app.js",
+  "author": {
+    "name": "Joeamd12-24-09",
+    "email": ""
+  }
+}

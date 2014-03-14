@@ -1,5 +1,16 @@
 ﻿body {
     font-family: 'Segoe UI', sans-serif;
+    margin: auto;
+    text-align: center;
+    padding: 0px;
+}
+
+#contentBorder {
+    margin:auto;
+
+}
+
+#content {
 }
 
 span {
