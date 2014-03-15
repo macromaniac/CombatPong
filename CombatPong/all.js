@@ -323,8 +323,40 @@ var CombatPong;
                 return true;
             return false;
         };
+        Util.genRectLines = function (x, y, width, height) {
+            var line = new Kinetic.Line({});
+            var points = [];
+            points.push(x, y);
+            points.push(x + width, y);
+            points.push(x + width, y + height);
+            points.push(x, y + height);
+            line.setPoints(points);
+            line.closed(true);
+            return line;
+        };
         return Util;
     })();
     CombatPong.Util = Util;
+})(CombatPong || (CombatPong = {}));
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+var CombatPong;
+(function (CombatPong) {
+    var Wall = (function (_super) {
+        __extends(Wall, _super);
+        function Wall(stageData) {
+            _super.call(this, stageData);
+        }
+        Wall.prototype.generateGraphics = function () {
+            this.rect = CombatPong.Util.genRectLines(100, 100, 100, 100);
+            this.rect.fill("Black");
+            this.graphic.add(this.rect);
+        };
+        return Wall;
+    })(CombatPong.GameObject);
 })(CombatPong || (CombatPong = {}));
 //# sourceMappingURL=all.js.map
