@@ -7,22 +7,22 @@
         baseHeight: number;
         stage: Kinetic.Stage;
 
+        game: Game;
         constructor(width: number, height: number, divID: string) {
             this.stage = new Kinetic.Stage({ width: width, height: height, container: divID });
             this.baseHeight = height;
             this.baseWidth = width;
 
             this.stageData = new StageData(this.stage);
-            var rect2 = new Kinetic.Rect({});
-            rect2.x(100); rect2.y(100); rect2.width(100); rect2.height(100); rect2.fill("Blue");
-            var layer = new Kinetic.Layer();
-            layer.add(rect2);
-            this.stage.add(layer);
             this.attachBorder();
+
+            this.game = new Game(this.stageData);
+
             requestAnimationFrame(this.tick);
         }
         private tick = (timestamp) => {
             this.stage.draw();
+            this.game.tick();
             requestAnimationFrame(this.tick);
         }
         private attachBorder() {

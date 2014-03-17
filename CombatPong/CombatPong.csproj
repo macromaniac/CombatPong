@@ -32,6 +32,7 @@
     <TypeScriptCompile Include="Src\app.ts" />
     <TypeScriptCompile Include="jquery.d.ts" />
     <TypeScriptCompile Include="kinetic.d.ts" />
+    <TypeScriptCompile Include="Src\CollisionManager.ts" />
     <TypeScriptCompile Include="Src\Game.ts" />
     <TypeScriptCompile Include="Src\GameObject.ts" />
     <TypeScriptCompile Include="Src\InteractiveGraphic.ts" />
@@ -40,6 +41,8 @@
     <TypeScriptCompile Include="socket.io-client.d.ts" />
     <TypeScriptCompile Include="Src\StageData.ts" />
     <TypeScriptCompile Include="Src\UtilityFunctions.ts" />
+    <TypeScriptCompile Include="Src\Wall.ts" />
+    <TypeScriptCompile Include="Src\World.ts" />
   </ItemGroup>
   <ItemGroup>
     <None Include="web.Debug.config">

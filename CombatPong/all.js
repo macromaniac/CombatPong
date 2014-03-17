@@ -12,10 +12,90 @@
 })(CombatPong || (CombatPong = {}));
 var CombatPong;
 (function (CombatPong) {
+    var CollisionManager = (function () {
+        function CollisionManager(stageData, gameObjects) {
+            this.stageData = stageData;
+            this.gameObjects = gameObjects;
+        }
+        CollisionManager.prototype.updateCollisions = function () {
+            this.updateObjectMappings();
+            this.sortGameObjectsByMinX();
+            for (var i = 0; i < this.gameObjects.length; ++i) {
+                this.updateCollisionFromIndex(i);
+            }
+        };
+
+        CollisionManager.prototype.updateObjectMappings = function () {
+            for (var i = 0; i < this.gameObjects.length; ++i)
+                this.gameObjects[i].interactiveGraphic.mapPoints();
+        };
+        CollisionManager.prototype.sortGameObjectsByMinX = function () {
+            //We use insertion here because the list is mostly sorted already (Should average o(n))
+            var j = 0;
+            for (var i = 0; i < this.gameObjects.length; ++i) {
+                j = i;
+                while (j > 0 && this.gameObjects[j - 1].interactiveGraphic.minX > this.gameObjects[j].interactiveGraphic.minX) {
+                    var temp = this.gameObjects[j];
+                    this.gameObjects[j] = this.gameObjects[i];
+                    this.gameObjects[i] = temp;
+                    j--;
+                }
+            }
+        };
+        CollisionManager.prototype.updateCollisionFromIndex = function (index) {
+            var center = index;
+
+            //Since the gameObjectsAre sorted by min X we can roughly collide them going to the right
+            //until they no longer roughly collied (when their min X is greater than our max X)
+            var rightBound = index;
+            while (this.doTheseIndecesRoughlyCollide(center, rightBound + 1))
+                rightBound++;
+            while (rightBound > center) {
+                if (this.doTheseIndecesCollide(center, rightBound)) {
+                    var a = this.gameObjects[center];
+                    var b = this.gameObjects[rightBound];
+
+                    var response = a.retreiveCollisionData();
+                    var flippedResponse = CombatPong.Util.copyAndFlipResponse(response);
+
+                    a.triggerAnotherObjectsCollision(b, response);
+                    b.triggerAnotherObjectsCollision(a, flippedResponse);
+                }
+                rightBound--;
+            }
+        };
+
+        CollisionManager.prototype.doTheseIndecesRoughlyCollide = function (indexA, indexB) {
+            if (indexA < 0 || indexA > this.gameObjects.length - 1)
+                return false;
+            if (indexB < 0 || indexB > this.gameObjects.length - 1)
+                return false;
+            var a = this.gameObjects[indexA];
+            var b = this.gameObjects[indexB];
+
+            return (a.checkForRoughCollision(b));
+        };
+        CollisionManager.prototype.doTheseIndecesCollide = function (indexA, indexB) {
+            //We do not check for index  because we have checked in the rough collision test
+            var a = this.gameObjects[indexA];
+            var b = this.gameObjects[indexB];
+
+            return a.checkForCollision(b);
+        };
+        return CollisionManager;
+    })();
+    CombatPong.CollisionManager = CollisionManager;
+})(CombatPong || (CombatPong = {}));
+var CombatPong;
+(function (CombatPong) {
     var Game = (function () {
         function Game(stageData) {
             this.stageData = stageData;
+            this.world = new CombatPong.World(stageData);
         }
+        Game.prototype.tick = function () {
+            this.world.tick();
+        };
         return Game;
     })();
     CombatPong.Game = Game;
@@ -26,13 +106,29 @@ var CombatPong;
     var GameObject = (function () {
         function GameObject(stageData) {
             this.stageData = stageData;
+            this.graphic = new Kinetic.Group({});
+            this.spawn();
+            this.stageData.foreground.add(this.graphic);
+            this.interactiveGraphic = new CombatPong.InteractiveGraphic(this.stageData, this.graphic);
         }
-        GameObject.prototype.generateGraphic = function () {
+        GameObject.prototype.spawn = function () {
         };
-        GameObject.prototype.sendCollisionMessage = function (receiver, response) {
+        GameObject.prototype.triggerAnotherObjectsCollision = function (receiver, response) {
+            var i = 4;
         };
-        GameObject.prototype.checkForCollision = function () {
-            return false;
+
+        GameObject.prototype.tick = function () {
+        };
+        GameObject.prototype.checkForCollision = function (otherGameObject) {
+            return this.interactiveGraphic.SATcollisionTest(otherGameObject.interactiveGraphic);
+        };
+        GameObject.prototype.retreiveCollisionData = function () {
+            return this.interactiveGraphic.satResponse;
+        };
+        GameObject.prototype.checkForRoughCollision = function (otherGameObject) {
+            return this.interactiveGraphic.roughCollisionTest(otherGameObject.interactiveGraphic);
+        };
+        GameObject.prototype.onWallCollision = function (wall, response) {
         };
         return GameObject;
     })();
@@ -41,10 +137,9 @@ var CombatPong;
 var CombatPong;
 (function (CombatPong) {
     var InteractiveGraphic = (function () {
-        function InteractiveGraphic(stageData, graphic, parent) {
+        function InteractiveGraphic(stageData, graphic) {
             this.stageData = stageData;
             this.graphic = graphic;
-            this.parent = parent;
             this.satResponse = new SAT.Response();
         }
         InteractiveGraphic.prototype.resetCollisionData = function () {
@@ -62,7 +157,11 @@ var CombatPong;
         InteractiveGraphic.prototype.mapPoints = function () {
             //generates the min max and converts point to SAT format (could not be casted, potential speed boost here but the points need to be analyzed for min max anyways so its not that big. Casting would require modifying SAT.js Vector class)
             this.resetCollisionData();
-            for (var child in this.graphic.getChildren()) {
+
+            var container = this.graphic.getChildren();
+            var objList = container.toArray();
+            for (var i = 0; i < objList.length; ++i) {
+                var child = objList[i];
                 if (CombatPong.Util.isCircle(child)) {
                     var circleChild = child;
                     this.considerPointForMinMax(circleChild.x() - circleChild.radius());
@@ -72,8 +171,8 @@ var CombatPong;
                     var polygonChild = child;
                     var polygonSATPoints = [];
                     for (var i = 0; i < polygonChild.points().length / 2; ++i) {
-                        var x = polygonChild.points()[i * 2];
-                        var y = polygonChild.points()[i * 2 + 1];
+                        var x = polygonChild.points()[i * 2] + polygonChild.getX();
+                        var y = polygonChild.points()[i * 2 + 1] + polygonChild.getY();
                         polygonSATPoints.push(new SAT.Vector(x, y));
                         this.considerPointForMinMax(x);
                     }
@@ -98,21 +197,21 @@ var CombatPong;
             this.satResponse = new SAT.Response();
             for (var circle in this.satCircles) {
                 for (var otherCircle in otherGraphic.satCircles) {
-                    if (SAT.testCircleCircle(circle, otherCircle, this.satResponse))
+                    if (SAT.testCircleCircle(this.satCircles[circle], otherGraphic.satCircles[otherCircle], this.satResponse))
                         return true;
                 }
                 for (var otherPolygon in otherGraphic.satPolygons) {
-                    if (SAT.testCirclePolygon(circle, otherPolygon, this.satResponse))
+                    if (SAT.testCirclePolygon(this.satCircles[circle], otherGraphic.satPolygons[otherPolygon], this.satResponse))
                         return true;
                 }
             }
             for (var polygon in this.satPolygons) {
                 for (var otherCircle in otherGraphic.satCircles) {
-                    if (SAT.testPolygonCircle(polygon, otherCircle, this.satResponse))
+                    if (SAT.testPolygonCircle(this.satPolygons[polygon], otherGraphic.satCircles[otherCircle], this.satResponse))
                         return true;
                 }
                 for (var otherPolygon in otherGraphic.satPolygons) {
-                    if (SAT.testPolygonPolygon(polygon, otherPolygon, this.satResponse))
+                    if (SAT.testPolygonPolygon(this.satPolygons[polygon], otherGraphic.satPolygons[otherPolygon], this.satResponse))
                         return true;
                 }
             }
@@ -211,6 +310,7 @@ var CombatPong;
             var _this = this;
             this.tick = function (timestamp) {
                 _this.stage.draw();
+                _this.game.tick();
                 requestAnimationFrame(_this.tick);
             };
             // If I don't have this there is occasionally a scrollbar on fullscreen, this is just light padding to prevent that from happening
@@ -220,16 +320,10 @@ var CombatPong;
             this.baseWidth = width;
 
             this.stageData = new CombatPong.StageData(this.stage);
-            var rect2 = new Kinetic.Rect({});
-            rect2.x(100);
-            rect2.y(100);
-            rect2.width(100);
-            rect2.height(100);
-            rect2.fill("Blue");
-            var layer = new Kinetic.Layer();
-            layer.add(rect2);
-            this.stage.add(layer);
             this.attachBorder();
+
+            this.game = new CombatPong.Game(this.stageData);
+
             requestAnimationFrame(this.tick);
         }
         Screen.prototype.attachBorder = function () {
@@ -306,7 +400,7 @@ var CombatPong;
         function Util() {
         }
         Util.isNumberWithinBounds = function (num, leftBound, rightBound) {
-            if (num > leftBound && num < rightBound)
+            if (num >= leftBound && num <= rightBound)
                 return true;
             return false;
         };
@@ -334,6 +428,13 @@ var CombatPong;
             line.closed(true);
             return line;
         };
+        Util.copyAndFlipResponse = function (response) {
+            var flippedResponse = new SAT.Response();
+            flippedResponse.overlapV = response.overlapV.reverse();
+            flippedResponse.overlapN = response.overlapN.reverse();
+            flippedResponse.overlap = response.overlap;
+            return flippedResponse;
+        };
         return Util;
     })();
     CombatPong.Util = Util;
@@ -351,12 +452,49 @@ var CombatPong;
         function Wall(stageData) {
             _super.call(this, stageData);
         }
-        Wall.prototype.generateGraphics = function () {
+        Wall.prototype.spawn = function () {
             this.rect = CombatPong.Util.genRectLines(100, 100, 100, 100);
             this.rect.fill("Black");
             this.graphic.add(this.rect);
+            this.speed = Math.random();
+        };
+        Wall.prototype.onWallCollision = function (wall, response) {
+            this.rect.fill("Red");
+            this.rect.y(this.rect.y() + .1);
+        };
+        Wall.prototype.triggerAnotherObjectsCollision = function (otherGameObject, response) {
+            otherGameObject.onWallCollision(this, this.retreiveCollisionData());
+        };
+        Wall.prototype.tick = function () {
+            this.rect.x(this.rect.x() + this.speed);
         };
         return Wall;
     })(CombatPong.GameObject);
+    CombatPong.Wall = Wall;
+})(CombatPong || (CombatPong = {}));
+var CombatPong;
+(function (CombatPong) {
+    var World = (function () {
+        function World(stageData) {
+            this.stageData = stageData;
+            this.worldObjects = [];
+            this.createWalls();
+            this.collisionManager = new CombatPong.CollisionManager(this.stageData, this.worldObjects);
+        }
+        World.prototype.createWalls = function () {
+            this.worldObjects.push(new CombatPong.Wall(this.stageData));
+            this.worldObjects.push(new CombatPong.Wall(this.stageData));
+            this.worldObjects.push(new CombatPong.Wall(this.stageData));
+        };
+        World.prototype.tick = function () {
+            this.collisionManager.updateCollisions();
+            for (var i = 0; i < this.worldObjects.length; ++i) {
+                this.worldObjects[i].tick();
+            }
+        };
+        return World;
+    })();
+    CombatPong.World = World;
+    ;
 })(CombatPong || (CombatPong = {}));
 //# sourceMappingURL=all.js.map
