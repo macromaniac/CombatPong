@@ -29,6 +29,8 @@
                 this.maxX = xPoint;
 
         }
+        public displayPolygons() {
+        }
         public mapPoints() {
             //generates the min max and converts point to SAT format (could not be casted, potential speed boost here but the points need to be analyzed for min max anyways so its not that big. Casting would require modifying SAT.js Vector class)
             this.resetCollisionData();
@@ -46,14 +48,28 @@
                             circleChild.y()), circleChild.radius()));
                 } else if (Util.isPolygon(child)) {
                     var polygonChild = <Kinetic.Line>child;
+
+                    var disp = new SAT.Vector(polygonChild.getX(), polygonChild.getY());
+
+                    var rotation = polygonChild.rotation();
+
+                    var scale = polygonChild.scale();
                     var polygonSATPoints: SAT.Vector[] = [];
                     for (var i = 0; i < polygonChild.points().length / 2; ++i) {
-                        var x = polygonChild.points()[i * 2] + polygonChild.getX();
-                        var y = polygonChild.points()[i * 2 + 1] + polygonChild.getY();
-                        polygonSATPoints.push(new SAT.Vector(x, y));
-                        this.considerPointForMinMax(x);
+                        var x = polygonChild.points()[i * 2];
+                        var y = polygonChild.points()[i * 2 + 1];
+                        var satV: SAT.Vector = new SAT.Vector(x,y);
+                        polygonSATPoints.push(satV);
                     }
-                    var satPolygon = new SAT.Polygon(new SAT.Vector(0, 0), polygonSATPoints);
+                    var satPolygon = new SAT.Polygon(new SAT.Vector(disp.x, disp.y), polygonSATPoints);
+
+                    //var offsetVector: SAT.Vector = new SAT.Vector(polygonChild.offsetX(), polygonChild.offsetY());
+                    //satPolygon.setOffset(new SAT.Vector(polygonChild.offsetX(), polygonChild.offsetY()));
+                    satPolygon.rotate(-polygonChild.rotation() * 0.0174532925);
+
+                    for (var i = 0; i < satPolygon.points.length; ++i)
+                        this.considerPointForMinMax(satPolygon.points[i].x);
+
                     this.satPolygons.push(satPolygon);
                 }
             }

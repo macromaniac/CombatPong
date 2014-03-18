@@ -31,23 +31,24 @@ var CombatPong;
         };
         CollisionManager.prototype.sortGameObjectsByMinX = function () {
             //We use insertion here because the list is mostly sorted already (Should average o(n))
-            var j = 0;
-            for (var i = 0; i < this.gameObjects.length; ++i) {
+            var j = 1;
+            for (var i = 1; i < this.gameObjects.length; ++i) {
                 j = i;
                 while (j > 0 && this.gameObjects[j - 1].interactiveGraphic.minX > this.gameObjects[j].interactiveGraphic.minX) {
-                    var temp = this.gameObjects[j];
-                    this.gameObjects[j] = this.gameObjects[i];
-                    this.gameObjects[i] = temp;
+                    var temp = this.gameObjects[j - 1];
+                    this.gameObjects[j - 1] = this.gameObjects[j];
+                    this.gameObjects[j] = temp;
                     j--;
                 }
             }
+            var a = 0;
         };
         CollisionManager.prototype.updateCollisionFromIndex = function (index) {
             var center = index;
 
             //Since the gameObjectsAre sorted by min X we can roughly collide them going to the right
             //until they no longer roughly collied (when their min X is greater than our max X)
-            var rightBound = index;
+            var rightBound = center;
             while (this.doTheseIndecesRoughlyCollide(center, rightBound + 1))
                 rightBound++;
             while (rightBound > center) {
@@ -70,6 +71,7 @@ var CombatPong;
                 return false;
             if (indexB < 0 || indexB > this.gameObjects.length - 1)
                 return false;
+            return true;
             var a = this.gameObjects[indexA];
             var b = this.gameObjects[indexB];
 
@@ -154,6 +156,8 @@ var CombatPong;
             if (xPoint > this.maxX)
                 this.maxX = xPoint;
         };
+        InteractiveGraphic.prototype.displayPolygons = function () {
+        };
         InteractiveGraphic.prototype.mapPoints = function () {
             //generates the min max and converts point to SAT format (could not be casted, potential speed boost here but the points need to be analyzed for min max anyways so its not that big. Casting would require modifying SAT.js Vector class)
             this.resetCollisionData();
@@ -169,14 +173,28 @@ var CombatPong;
                     this.satCircles.push(new SAT.Circle(new SAT.Vector(circleChild.x(), circleChild.y()), circleChild.radius()));
                 } else if (CombatPong.Util.isPolygon(child)) {
                     var polygonChild = child;
+
+                    var disp = new SAT.Vector(polygonChild.getX(), polygonChild.getY());
+
+                    var rotation = polygonChild.rotation();
+
+                    var scale = polygonChild.scale();
                     var polygonSATPoints = [];
                     for (var i = 0; i < polygonChild.points().length / 2; ++i) {
-                        var x = polygonChild.points()[i * 2] + polygonChild.getX();
-                        var y = polygonChild.points()[i * 2 + 1] + polygonChild.getY();
-                        polygonSATPoints.push(new SAT.Vector(x, y));
-                        this.considerPointForMinMax(x);
+                        var x = polygonChild.points()[i * 2];
+                        var y = polygonChild.points()[i * 2 + 1];
+                        var satV = new SAT.Vector(x, y);
+                        polygonSATPoints.push(satV);
                     }
-                    var satPolygon = new SAT.Polygon(new SAT.Vector(0, 0), polygonSATPoints);
+                    var satPolygon = new SAT.Polygon(new SAT.Vector(disp.x, disp.y), polygonSATPoints);
+
+                    //var offsetVector: SAT.Vector = new SAT.Vector(polygonChild.offsetX(), polygonChild.offsetY());
+                    //satPolygon.setOffset(new SAT.Vector(polygonChild.offsetX(), polygonChild.offsetY()));
+                    satPolygon.rotate(-polygonChild.rotation() * 0.0174532925);
+
+                    for (var i = 0; i < satPolygon.points.length; ++i)
+                        this.considerPointForMinMax(satPolygon.points[i].x);
+
                     this.satPolygons.push(satPolygon);
                 }
             }
@@ -419,11 +437,14 @@ var CombatPong;
         };
         Util.genRectLines = function (x, y, width, height) {
             var line = new Kinetic.Line({});
+            line.x(x);
+            line.y(y);
             var points = [];
-            points.push(x, y);
-            points.push(x + width, y);
-            points.push(x + width, y + height);
-            points.push(x, y + height);
+            points.push(0, 0);
+            points.push(width, 0);
+            points.push(width, height);
+            points.push(0, height);
+
             line.setPoints(points);
             line.closed(true);
             return line;
@@ -453,20 +474,23 @@ var CombatPong;
             _super.call(this, stageData);
         }
         Wall.prototype.spawn = function () {
-            this.rect = CombatPong.Util.genRectLines(100, 100, 100, 100);
+            this.rect = CombatPong.Util.genRectLines(0, 0, 50, 50);
             this.rect.fill("Black");
             this.graphic.add(this.rect);
             this.speed = Math.random();
+            this.rect.draggable(true);
+            this.rect.rotate(15);
         };
         Wall.prototype.onWallCollision = function (wall, response) {
             this.rect.fill("Red");
-            this.rect.y(this.rect.y() + .1);
         };
         Wall.prototype.triggerAnotherObjectsCollision = function (otherGameObject, response) {
             otherGameObject.onWallCollision(this, this.retreiveCollisionData());
         };
         Wall.prototype.tick = function () {
-            this.rect.x(this.rect.x() + this.speed);
+            this.rect.fill("Black");
+
+            this.rect.rotate(this.speed * .25);
         };
         return Wall;
     })(CombatPong.GameObject);
@@ -485,12 +509,14 @@ var CombatPong;
             this.worldObjects.push(new CombatPong.Wall(this.stageData));
             this.worldObjects.push(new CombatPong.Wall(this.stageData));
             this.worldObjects.push(new CombatPong.Wall(this.stageData));
+            this.worldObjects.push(new CombatPong.Wall(this.stageData));
+            this.worldObjects.push(new CombatPong.Wall(this.stageData));
         };
         World.prototype.tick = function () {
-            this.collisionManager.updateCollisions();
             for (var i = 0; i < this.worldObjects.length; ++i) {
                 this.worldObjects[i].tick();
             }
+            this.collisionManager.updateCollisions();
         };
         return World;
     })();

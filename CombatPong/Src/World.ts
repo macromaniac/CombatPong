@@ -13,12 +13,14 @@
             this.worldObjects.push(new Wall(this.stageData ));
             this.worldObjects.push(new Wall(this.stageData ));
             this.worldObjects.push(new Wall(this.stageData ));
+            this.worldObjects.push(new Wall(this.stageData ));
+            this.worldObjects.push(new Wall(this.stageData ));
         }
         public tick() {
-            this.collisionManager.updateCollisions();
             for (var i: number = 0; i < this.worldObjects.length; ++i) {
                 this.worldObjects[i].tick();
             }
+            this.collisionManager.updateCollisions();
         }
     };
 }
