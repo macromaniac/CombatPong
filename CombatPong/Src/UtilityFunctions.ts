@@ -20,13 +20,13 @@
         }
         public static genRectLines(x: number, y: number, width: number, height: number): Kinetic.Line {
             var line = new Kinetic.Line({});
-            line.x(x);
-            line.y(y);
+            //line.x(x);
+            //line.y(y);
             var points: number[] = [];
-            points.push(0, 0);
-            points.push(width, 0);
-            points.push(width, height);
-            points.push(0, height);
+            points.push(x, y);
+            points.push(x+width, y+0);
+            points.push(x+width, y+height);
+            points.push(x+0, y+height);
 
             line.setPoints(points);
             line.closed(true);

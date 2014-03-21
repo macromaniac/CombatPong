@@ -30,6 +30,7 @@
 
         }
         public displayPolygons() {
+
         }
         public mapPoints() {
             //generates the min max and converts point to SAT format (could not be casted, potential speed boost here but the points need to be analyzed for min max anyways so its not that big. Casting would require modifying SAT.js Vector class)
@@ -61,11 +62,12 @@
                         var satV: SAT.Vector = new SAT.Vector(x,y);
                         polygonSATPoints.push(satV);
                     }
+                    //var satPolygon = new SAT.Polygon(new SAT.Vector(disp.x, disp.y), polygonSATPoints);
                     var satPolygon = new SAT.Polygon(new SAT.Vector(disp.x, disp.y), polygonSATPoints);
 
                     //var offsetVector: SAT.Vector = new SAT.Vector(polygonChild.offsetX(), polygonChild.offsetY());
-                    //satPolygon.setOffset(new SAT.Vector(polygonChild.offsetX(), polygonChild.offsetY()));
-                    satPolygon.rotate(-polygonChild.rotation() * 0.0174532925);
+                    satPolygon.setOffset(new SAT.Vector(polygonChild.offsetX(), polygonChild.offsetY()));
+                    satPolygon.rotate(polygonChild.rotation() * 0.0174532925);
 
                     for (var i = 0; i < satPolygon.points.length; ++i)
                         this.considerPointForMinMax(satPolygon.points[i].x);

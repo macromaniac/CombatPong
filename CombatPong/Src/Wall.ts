@@ -6,7 +6,7 @@
 		}
         speed: number;
 		spawn() {
-			this.rect = Util.genRectLines(0, 0, 50, 50);
+			this.rect = Util.genRectLines(50, 50, 100, 100);
 			this.rect.fill("Black");
             this.graphic.add(this.rect);
             this.speed = Math.random();
@@ -23,7 +23,7 @@
         tick() {
 			this.rect.fill("Black");
 
-            this.rect.rotate(this.speed * .25);
+            //this.rect.rotate(this.speed * .25);
         }
 	}
 }

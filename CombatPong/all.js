@@ -186,11 +186,13 @@ var CombatPong;
                         var satV = new SAT.Vector(x, y);
                         polygonSATPoints.push(satV);
                     }
+
+                    //var satPolygon = new SAT.Polygon(new SAT.Vector(disp.x, disp.y), polygonSATPoints);
                     var satPolygon = new SAT.Polygon(new SAT.Vector(disp.x, disp.y), polygonSATPoints);
 
                     //var offsetVector: SAT.Vector = new SAT.Vector(polygonChild.offsetX(), polygonChild.offsetY());
-                    //satPolygon.setOffset(new SAT.Vector(polygonChild.offsetX(), polygonChild.offsetY()));
-                    satPolygon.rotate(-polygonChild.rotation() * 0.0174532925);
+                    satPolygon.setOffset(new SAT.Vector(polygonChild.offsetX(), polygonChild.offsetY()));
+                    satPolygon.rotate(polygonChild.rotation() * 0.0174532925);
 
                     for (var i = 0; i < satPolygon.points.length; ++i)
                         this.considerPointForMinMax(satPolygon.points[i].x);
@@ -437,13 +439,14 @@ var CombatPong;
         };
         Util.genRectLines = function (x, y, width, height) {
             var line = new Kinetic.Line({});
-            line.x(x);
-            line.y(y);
+
+            //line.x(x);
+            //line.y(y);
             var points = [];
-            points.push(0, 0);
-            points.push(width, 0);
-            points.push(width, height);
-            points.push(0, height);
+            points.push(x, y);
+            points.push(x + width, y + 0);
+            points.push(x + width, y + height);
+            points.push(x + 0, y + height);
 
             line.setPoints(points);
             line.closed(true);
@@ -474,7 +477,7 @@ var CombatPong;
             _super.call(this, stageData);
         }
         Wall.prototype.spawn = function () {
-            this.rect = CombatPong.Util.genRectLines(0, 0, 50, 50);
+            this.rect = CombatPong.Util.genRectLines(50, 50, 100, 100);
             this.rect.fill("Black");
             this.graphic.add(this.rect);
             this.speed = Math.random();
@@ -489,8 +492,7 @@ var CombatPong;
         };
         Wall.prototype.tick = function () {
             this.rect.fill("Black");
-
-            this.rect.rotate(this.speed * .25);
+            //this.rect.rotate(this.speed * .25);
         };
         return Wall;
     })(CombatPong.GameObject);
