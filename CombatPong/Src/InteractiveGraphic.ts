@@ -66,6 +66,7 @@
                     var satPolygon = new SAT.Polygon(new SAT.Vector(disp.x, disp.y), polygonSATPoints);
 
                     //var offsetVector: SAT.Vector = new SAT.Vector(polygonChild.offsetX(), polygonChild.offsetY());
+                    var check: number = polygonChild.offsetX();
                     satPolygon.setOffset(new SAT.Vector(polygonChild.offsetX(), polygonChild.offsetY()));
                     satPolygon.rotate(polygonChild.rotation() * 0.0174532925);
 

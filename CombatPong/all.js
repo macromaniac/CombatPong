@@ -191,6 +191,7 @@ var CombatPong;
                     var satPolygon = new SAT.Polygon(new SAT.Vector(disp.x, disp.y), polygonSATPoints);
 
                     //var offsetVector: SAT.Vector = new SAT.Vector(polygonChild.offsetX(), polygonChild.offsetY());
+                    var check = polygonChild.offsetX();
                     satPolygon.setOffset(new SAT.Vector(polygonChild.offsetX(), polygonChild.offsetY()));
                     satPolygon.rotate(polygonChild.rotation() * 0.0174532925);
 
@@ -477,7 +478,9 @@ var CombatPong;
             _super.call(this, stageData);
         }
         Wall.prototype.spawn = function () {
-            this.rect = CombatPong.Util.genRectLines(50, 50, 100, 100);
+            this.rect = CombatPong.Util.genRectLines(-25, -25, 50, 50);
+            this.rect.x(100);
+            this.rect.y(100);
             this.rect.fill("Black");
             this.graphic.add(this.rect);
             this.speed = Math.random();
@@ -492,7 +495,8 @@ var CombatPong;
         };
         Wall.prototype.tick = function () {
             this.rect.fill("Black");
-            //this.rect.rotate(this.speed * .25);
+
+            this.rect.rotate(this.speed * .25);
         };
         return Wall;
     })(CombatPong.GameObject);
