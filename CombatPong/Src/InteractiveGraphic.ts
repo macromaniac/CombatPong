@@ -42,11 +42,12 @@
                 var child = objList[i];
                 if (Util.isCircle(child)) {
                     var circleChild = <Kinetic.Circle>child;
-                    this.considerPointForMinMax(circleChild.x() - circleChild.radius());
-                    this.considerPointForMinMax(circleChild.x() + circleChild.radius());
+                    var scale = circleChild.scale();
+                    this.considerPointForMinMax(circleChild.x() - circleChild.radius() * scale.x);
+                    this.considerPointForMinMax(circleChild.x() + circleChild.radius() * scale.y);
                     this.satCircles.push(
                         new SAT.Circle(new SAT.Vector(circleChild.x(),
-                            circleChild.y()), circleChild.radius()));
+                            circleChild.y()), circleChild.radius() * scale.x));
                 } else if (Util.isPolygon(child)) {
                     var polygonChild = <Kinetic.Line>child;
 
@@ -57,8 +58,8 @@
                     var scale = polygonChild.scale();
                     var polygonSATPoints: SAT.Vector[] = [];
                     for (var i = 0; i < polygonChild.points().length / 2; ++i) {
-                        var x = polygonChild.points()[i * 2];
-                        var y = polygonChild.points()[i * 2 + 1];
+                        var x = polygonChild.points()[i * 2] * scale.x;
+                        var y = polygonChild.points()[i * 2 + 1] * scale.y;
                         var satV: SAT.Vector = new SAT.Vector(x,y);
                         polygonSATPoints.push(satV);
                     }

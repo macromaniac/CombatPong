@@ -15,6 +15,7 @@
             this.worldObjects.push(new Wall(this.stageData ));
             this.worldObjects.push(new Wall(this.stageData ));
             this.worldObjects.push(new Wall(this.stageData ));
+            this.worldObjects.push(new Ball(this.stageData ));
         }
         public tick() {
             for (var i: number = 0; i < this.worldObjects.length; ++i) {

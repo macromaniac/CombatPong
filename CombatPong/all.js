@@ -12,6 +12,77 @@
 })(CombatPong || (CombatPong = {}));
 var CombatPong;
 (function (CombatPong) {
+    var GameObject = (function () {
+        function GameObject(stageData) {
+            this.stageData = stageData;
+            this.graphic = new Kinetic.Group({});
+            this.spawn();
+            this.stageData.foreground.add(this.graphic);
+            this.interactiveGraphic = new CombatPong.InteractiveGraphic(this.stageData, this.graphic);
+        }
+        GameObject.prototype.spawn = function () {
+        };
+        GameObject.prototype.triggerAnotherObjectsCollision = function (receiver, response) {
+            var i = 4;
+        };
+
+        GameObject.prototype.tick = function () {
+        };
+        GameObject.prototype.checkForCollision = function (otherGameObject) {
+            return this.interactiveGraphic.SATcollisionTest(otherGameObject.interactiveGraphic);
+        };
+        GameObject.prototype.retreiveCollisionData = function () {
+            return this.interactiveGraphic.satResponse;
+        };
+        GameObject.prototype.checkForRoughCollision = function (otherGameObject) {
+            return this.interactiveGraphic.roughCollisionTest(otherGameObject.interactiveGraphic);
+        };
+        GameObject.prototype.onWallCollision = function (wall, response) {
+        };
+        GameObject.prototype.onBallCollision = function (ball, response) {
+        };
+        return GameObject;
+    })();
+    CombatPong.GameObject = GameObject;
+})(CombatPong || (CombatPong = {}));
+/// <reference path="gameobject.ts" />
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+var CombatPong;
+(function (CombatPong) {
+    var Ball = (function (_super) {
+        __extends(Ball, _super);
+        function Ball(stageData) {
+            _super.call(this, stageData);
+        }
+        Ball.prototype.spawn = function () {
+            this.circle = new Kinetic.Circle({});
+            this.circle.radius(100);
+            this.circle.x(100);
+            this.circle.y(100);
+            this.circle.fill("Blue");
+            this.circle.draggable(true);
+            this.graphic.add(this.circle);
+        };
+        Ball.prototype.onWallCollision = function (wall, response) {
+            this.circle.fill("Red");
+        };
+        Ball.prototype.triggerAnotherObjectsCollision = function (otherGameObject, response) {
+            otherGameObject.onBallCollision(this, this.retreiveCollisionData());
+        };
+        Ball.prototype.tick = function () {
+            this.circle.fill("Blue");
+        };
+        return Ball;
+    })(CombatPong.GameObject);
+    CombatPong.Ball = Ball;
+})(CombatPong || (CombatPong = {}));
+var CombatPong;
+(function (CombatPong) {
     var CollisionManager = (function () {
         function CollisionManager(stageData, gameObjects) {
             this.stageData = stageData;
@@ -105,39 +176,6 @@ var CombatPong;
 })(CombatPong || (CombatPong = {}));
 var CombatPong;
 (function (CombatPong) {
-    var GameObject = (function () {
-        function GameObject(stageData) {
-            this.stageData = stageData;
-            this.graphic = new Kinetic.Group({});
-            this.spawn();
-            this.stageData.foreground.add(this.graphic);
-            this.interactiveGraphic = new CombatPong.InteractiveGraphic(this.stageData, this.graphic);
-        }
-        GameObject.prototype.spawn = function () {
-        };
-        GameObject.prototype.triggerAnotherObjectsCollision = function (receiver, response) {
-            var i = 4;
-        };
-
-        GameObject.prototype.tick = function () {
-        };
-        GameObject.prototype.checkForCollision = function (otherGameObject) {
-            return this.interactiveGraphic.SATcollisionTest(otherGameObject.interactiveGraphic);
-        };
-        GameObject.prototype.retreiveCollisionData = function () {
-            return this.interactiveGraphic.satResponse;
-        };
-        GameObject.prototype.checkForRoughCollision = function (otherGameObject) {
-            return this.interactiveGraphic.roughCollisionTest(otherGameObject.interactiveGraphic);
-        };
-        GameObject.prototype.onWallCollision = function (wall, response) {
-        };
-        return GameObject;
-    })();
-    CombatPong.GameObject = GameObject;
-})(CombatPong || (CombatPong = {}));
-var CombatPong;
-(function (CombatPong) {
     var InteractiveGraphic = (function () {
         function InteractiveGraphic(stageData, graphic) {
             this.stageData = stageData;
@@ -168,9 +206,10 @@ var CombatPong;
                 var child = objList[i];
                 if (CombatPong.Util.isCircle(child)) {
                     var circleChild = child;
-                    this.considerPointForMinMax(circleChild.x() - circleChild.radius());
-                    this.considerPointForMinMax(circleChild.x() + circleChild.radius());
-                    this.satCircles.push(new SAT.Circle(new SAT.Vector(circleChild.x(), circleChild.y()), circleChild.radius()));
+                    var scale = circleChild.scale();
+                    this.considerPointForMinMax(circleChild.x() - circleChild.radius() * scale.x);
+                    this.considerPointForMinMax(circleChild.x() + circleChild.radius() * scale.y);
+                    this.satCircles.push(new SAT.Circle(new SAT.Vector(circleChild.x(), circleChild.y()), circleChild.radius() * scale.x));
                 } else if (CombatPong.Util.isPolygon(child)) {
                     var polygonChild = child;
 
@@ -181,8 +220,8 @@ var CombatPong;
                     var scale = polygonChild.scale();
                     var polygonSATPoints = [];
                     for (var i = 0; i < polygonChild.points().length / 2; ++i) {
-                        var x = polygonChild.points()[i * 2];
-                        var y = polygonChild.points()[i * 2 + 1];
+                        var x = polygonChild.points()[i * 2] * scale.x;
+                        var y = polygonChild.points()[i * 2 + 1] * scale.y;
                         var satV = new SAT.Vector(x, y);
                         polygonSATPoints.push(satV);
                     }
@@ -464,12 +503,6 @@ var CombatPong;
     })();
     CombatPong.Util = Util;
 })(CombatPong || (CombatPong = {}));
-var __extends = this.__extends || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
-};
 var CombatPong;
 (function (CombatPong) {
     var Wall = (function (_super) {
@@ -481,6 +514,8 @@ var CombatPong;
             this.rect = CombatPong.Util.genRectLines(-25, -25, 50, 50);
             this.rect.x(100);
             this.rect.y(100);
+            this.rect.scaleX(2);
+            this.rect.scaleY(3);
             this.rect.fill("Black");
             this.graphic.add(this.rect);
             this.speed = Math.random();
@@ -490,11 +525,15 @@ var CombatPong;
         Wall.prototype.onWallCollision = function (wall, response) {
             this.rect.fill("Red");
         };
+        Wall.prototype.onBallCollision = function (ball, response) {
+            this.rect.scaleX(1);
+        };
         Wall.prototype.triggerAnotherObjectsCollision = function (otherGameObject, response) {
             otherGameObject.onWallCollision(this, this.retreiveCollisionData());
         };
         Wall.prototype.tick = function () {
             this.rect.fill("Black");
+            this.rect.scaleX(2);
 
             this.rect.rotate(this.speed * .25);
         };
@@ -517,6 +556,7 @@ var CombatPong;
             this.worldObjects.push(new CombatPong.Wall(this.stageData));
             this.worldObjects.push(new CombatPong.Wall(this.stageData));
             this.worldObjects.push(new CombatPong.Wall(this.stageData));
+            this.worldObjects.push(new CombatPong.Ball(this.stageData));
         };
         World.prototype.tick = function () {
             for (var i = 0; i < this.worldObjects.length; ++i) {

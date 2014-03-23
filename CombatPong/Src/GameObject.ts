@@ -26,6 +26,6 @@
             return this.interactiveGraphic.roughCollisionTest(otherGameObject.interactiveGraphic);
         }
         onWallCollision(wall: Wall, response: SAT.Response) { }
-        //onBallCollision(ball: Ball, response: SAT.Response);
+        onBallCollision(ball: Ball, response: SAT.Response) { }
     }
 }
