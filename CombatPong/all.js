@@ -56,18 +56,16 @@ var CombatPong;
 (function (CombatPong) {
     var Ball = (function (_super) {
         __extends(Ball, _super);
-        function Ball(stageData) {
+        function Ball(stageData, x, y, radius) {
             _super.call(this, stageData);
+            this.spawnWithParamaters(x, y, radius);
         }
-        Ball.prototype.spawn = function () {
-            this.circle = new Kinetic.Circle({});
-            this.circle.radius(100);
-            this.circle.x(100);
-            this.circle.y(100);
-            this.circle.fill("Blue");
-            this.circle.draggable(true);
+        Ball.prototype.spawnWithParamaters = function (x, y, radius) {
+            this.circle = new Kinetic.Circle({ x: x, y: y, radius: radius });
+            this.circle.fill(Ball.defaultBallColor);
             this.graphic.add(this.circle);
         };
+
         Ball.prototype.onWallCollision = function (wall, response) {
             this.circle.fill("Red");
         };
@@ -75,8 +73,8 @@ var CombatPong;
             otherGameObject.onBallCollision(this, this.retreiveCollisionData());
         };
         Ball.prototype.tick = function () {
-            this.circle.fill("Blue");
         };
+        Ball.defaultBallColor = "Black";
         return Ball;
     })(CombatPong.GameObject);
     CombatPong.Ball = Ball;
@@ -379,7 +377,7 @@ var CombatPong;
             this.baseHeight = height;
             this.baseWidth = width;
 
-            this.stageData = new CombatPong.StageData(this.stage);
+            this.stageData = new CombatPong.StageData(this.stage, this.baseWidth, this.baseHeight);
             this.attachBorder();
 
             this.game = new CombatPong.Game(this.stageData);
@@ -437,7 +435,7 @@ var CombatPong;
 var CombatPong;
 (function (CombatPong) {
     var StageData = (function () {
-        function StageData(stage) {
+        function StageData(stage, baseWidth, baseHeight) {
             this.stage = stage;
 
             this.UI = new Kinetic.Layer();
@@ -448,6 +446,9 @@ var CombatPong;
 
             this.background = new Kinetic.Layer();
             this.stage.add(this.background);
+
+            this.baseWidth = baseWidth;
+            this.baseHeight = baseHeight;
         }
         return StageData;
     })();
@@ -507,36 +508,23 @@ var CombatPong;
 (function (CombatPong) {
     var Wall = (function (_super) {
         __extends(Wall, _super);
-        function Wall(stageData) {
+        function Wall(stageData, x, y, width, height) {
             _super.call(this, stageData);
+            this.spawnWithParams(x, y, width, height);
         }
-        Wall.prototype.spawn = function () {
-            this.rect = CombatPong.Util.genRectLines(-25, -25, 50, 50);
-            this.rect.x(100);
-            this.rect.y(100);
-            this.rect.scaleX(2);
-            this.rect.scaleY(3);
-            this.rect.fill("Black");
+        Wall.prototype.spawnWithParams = function (x, y, width, height) {
+            this.rect = CombatPong.Util.genRectLines(0, 0, width, height);
+            this.rect.x(x);
+            this.rect.y(y);
+            this.rect.fill(Wall.defaultWallColor);
             this.graphic.add(this.rect);
-            this.speed = Math.random();
-            this.rect.draggable(true);
-            this.rect.rotate(15);
-        };
-        Wall.prototype.onWallCollision = function (wall, response) {
-            this.rect.fill("Red");
         };
         Wall.prototype.onBallCollision = function (ball, response) {
-            this.rect.scaleX(1);
         };
         Wall.prototype.triggerAnotherObjectsCollision = function (otherGameObject, response) {
             otherGameObject.onWallCollision(this, this.retreiveCollisionData());
         };
-        Wall.prototype.tick = function () {
-            this.rect.fill("Black");
-            this.rect.scaleX(2);
-
-            this.rect.rotate(this.speed * .25);
-        };
+        Wall.defaultWallColor = "Black";
         return Wall;
     })(CombatPong.GameObject);
     CombatPong.Wall = Wall;
@@ -551,12 +539,13 @@ var CombatPong;
             this.collisionManager = new CombatPong.CollisionManager(this.stageData, this.worldObjects);
         }
         World.prototype.createWalls = function () {
-            this.worldObjects.push(new CombatPong.Wall(this.stageData));
-            this.worldObjects.push(new CombatPong.Wall(this.stageData));
-            this.worldObjects.push(new CombatPong.Wall(this.stageData));
-            this.worldObjects.push(new CombatPong.Wall(this.stageData));
-            this.worldObjects.push(new CombatPong.Wall(this.stageData));
-            this.worldObjects.push(new CombatPong.Ball(this.stageData));
+            var heightOfWalls = this.stageData.baseHeight / 20;
+            var widthOfWalls = this.stageData.baseWidth;
+            this.worldObjects.push(new CombatPong.Wall(this.stageData, 0, 0, widthOfWalls, heightOfWalls));
+
+            this.worldObjects.push(new CombatPong.Wall(this.stageData, 0, this.stageData.baseHeight - heightOfWalls, widthOfWalls, heightOfWalls));
+
+            this.worldObjects.push(new CombatPong.Ball(this.stageData, this.stageData.baseWidth / 2, this.stageData.baseHeight / 2, this.stageData.baseHeight / 50));
         };
         World.prototype.tick = function () {
             for (var i = 0; i < this.worldObjects.length; ++i) {

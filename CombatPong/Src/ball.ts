@@ -2,20 +2,19 @@
 
 module CombatPong {
     export class Ball extends GameObject {
+        static defaultBallColor = "Black";
         circle: Kinetic.Circle;
-        constructor(stageData: StageData) {
+        constructor(stageData: StageData, x:number, y:number, radius:number) {
             super(stageData);
+            this.spawnWithParamaters(x,y,radius);
         }
-        spawn() {
-            this.circle = new Kinetic.Circle({});
-            this.circle.radius(100);
-            this.circle.x(100)
-            this.circle.y(100);
-            this.circle.fill("Blue");
-            this.circle.draggable(true);
-            this.graphic.add(this.circle);
 
+        spawnWithParamaters(x:number, y:number, radius: number) {
+            this.circle = new Kinetic.Circle({x:x, y:y, radius:radius});
+            this.circle.fill(Ball.defaultBallColor);
+            this.graphic.add(this.circle);
         }
+
         onWallCollision(wall: Wall, response: SAT.Response) {
             this.circle.fill("Red");
         }
@@ -23,7 +22,6 @@ module CombatPong {
             otherGameObject.onBallCollision(this, this.retreiveCollisionData());
         }
         tick() {
-            this.circle.fill("Blue");
         }
     }
 }

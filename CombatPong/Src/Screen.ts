@@ -13,7 +13,7 @@
             this.baseHeight = height;
             this.baseWidth = width;
 
-            this.stageData = new StageData(this.stage);
+            this.stageData = new StageData(this.stage, this.baseWidth, this.baseHeight);
             this.attachBorder();
 
             this.game = new Game(this.stageData);

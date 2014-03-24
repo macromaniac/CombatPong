@@ -5,7 +5,10 @@
         public background: Kinetic.Layer;
         public stage: Kinetic.Stage;
 
-        constructor(stage: Kinetic.Stage) {
+        public baseWidth: number;
+        public baseHeight: number;
+
+        constructor(stage: Kinetic.Stage, baseWidth:number, baseHeight:number) {
             this.stage = stage;
 
             this.UI = new Kinetic.Layer();
@@ -17,6 +20,8 @@
             this.background = new Kinetic.Layer();
             this.stage.add(this.background);
 
+            this.baseWidth = baseWidth;
+            this.baseHeight = baseHeight;
         }
     };
 }
