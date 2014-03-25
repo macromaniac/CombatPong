@@ -167,6 +167,7 @@ var CombatPong;
             this.stageData = stageData;
             this.world = new CombatPong.World(stageData);
             this.peerMan = new CombatPong.PeerMan();
+            this.gameHostingInterface = new CombatPong.GameHostingInterface(stageData);
         }
         Game.prototype.tick = function () {
             this.regulatedTick();
@@ -202,6 +203,33 @@ var CombatPong;
         return Timer;
     })();
     CombatPong.Timer = Timer;
+    ;
+})(CombatPong || (CombatPong = {}));
+var CombatPong;
+(function (CombatPong) {
+    var GameHostingInterface = (function () {
+        function GameHostingInterface(stageData) {
+            this.stageData = stageData;
+            this.displayButtons();
+            //if (stageData.isNetEnabled)
+            //	this.displayButtons();
+        }
+        GameHostingInterface.prototype.displayButtons = function () {
+            var b = document.createElement("BUTTON");
+            var t = document.createTextNode("CLICK ME");
+            b.appendChild(t);
+            b.style.zIndex = "100";
+            b.style.position = "absolute";
+            b.style.top = "10px";
+            b.style.bottom = "10px";
+            b.style.marginTop = "10px";
+            b.style.margin = "0px";
+        };
+        GameHostingInterface.prototype.hideButtons = function () {
+        };
+        return GameHostingInterface;
+    })();
+    CombatPong.GameHostingInterface = GameHostingInterface;
     ;
 })(CombatPong || (CombatPong = {}));
 var CombatPong;

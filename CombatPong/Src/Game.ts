@@ -5,10 +5,13 @@
 		private stageData: StageData;
 		private world: World;
 		private peerMan: PeerMan;
+		private gameHostingInterface: GameHostingInterface;
 		constructor(stageData: StageData) {
 			this.stageData = stageData;
 			this.world = new World(stageData);
 			this.peerMan = new PeerMan();
+			this.gameHostingInterface = new GameHostingInterface(stageData);
+
 		}
 		public tick() {
 			this.regulatedTick();
