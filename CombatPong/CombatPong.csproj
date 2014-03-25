@@ -38,6 +38,7 @@
     <TypeScriptCompile Include="Src\GameObject.ts" />
     <TypeScriptCompile Include="Src\InteractiveGraphic.ts" />
     <TypeScriptCompile Include="Src\KeyMan.ts" />
+    <TypeScriptCompile Include="Src\PeerMan.ts" />
     <TypeScriptCompile Include="Src\Screen.ts" />
     <TypeScriptCompile Include="socket.io-client.d.ts" />
     <TypeScriptCompile Include="Src\StageData.ts" />

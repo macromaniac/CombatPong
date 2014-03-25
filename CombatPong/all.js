@@ -161,15 +161,47 @@ var CombatPong;
 (function (CombatPong) {
     var Game = (function () {
         function Game(stageData) {
+            this.logicFrameLengthInMS = 1 / 50 * 1000;
+            this.tickNumber = 0;
+            this.expectedTickNumber = 0;
             this.stageData = stageData;
             this.world = new CombatPong.World(stageData);
+            this.peerMan = new CombatPong.PeerMan();
         }
         Game.prototype.tick = function () {
-            this.world.tick();
+            this.regulatedTick();
+        };
+
+        Game.prototype.regulatedTick = function () {
+            this.expectedTickNumber = this.peerMan.timeSinceStartMS() / this.logicFrameLengthInMS;
+            while (this.expectedTickNumber > this.tickNumber) {
+                if (this.isNetworkTick(this.tickNumber))
+                    this.peerMan.tick();
+                this.world.tick();
+                this.tickNumber++;
+            }
+        };
+        Game.prototype.isNetworkTick = function (tickNo) {
+            if (this.stageData.isNetEnabled == false)
+                return false;
+            var prevTickTime = this.logicFrameLengthInMS * (tickNo - 1);
+            var tickTime = this.logicFrameLengthInMS * tickNo;
+            var networkTickForPrevTickTime = Math.floor(prevTickTime / CombatPong.PeerMan.defaultNetworkFrameLengthInMS);
+            var networkTickForCurrentTickTime = Math.floor(tickTime / CombatPong.PeerMan.defaultNetworkFrameLengthInMS);
+            if (networkTickForCurrentTickTime > networkTickForPrevTickTime)
+                return true;
+            return false;
         };
         return Game;
     })();
     CombatPong.Game = Game;
+    ;
+    var Timer = (function () {
+        function Timer() {
+        }
+        return Timer;
+    })();
+    CombatPong.Timer = Timer;
     ;
 })(CombatPong || (CombatPong = {}));
 var CombatPong;
@@ -363,6 +395,37 @@ var MWG;
 })(MWG || (MWG = {}));
 var CombatPong;
 (function (CombatPong) {
+    var PeerMan = (function () {
+        function PeerMan() {
+        }
+        PeerMan.prototype.tick = function () {
+        };
+        PeerMan.prototype.timeSinceStartMS = function () {
+            return 1;
+        };
+        PeerMan.defaultNetworkFrameLengthInMS = 1 / 8 * 1000;
+        return PeerMan;
+    })();
+    CombatPong.PeerMan = PeerMan;
+    ;
+    var PeerManServer = (function () {
+        function PeerManServer() {
+        }
+        return PeerManServer;
+    })();
+    CombatPong.PeerManServer = PeerManServer;
+    ;
+    var PeerManClient = (function () {
+        function PeerManClient(serverID) {
+            this.serverID = serverID;
+        }
+        return PeerManClient;
+    })();
+    CombatPong.PeerManClient = PeerManClient;
+    ;
+})(CombatPong || (CombatPong = {}));
+var CombatPong;
+(function (CombatPong) {
     var Screen = (function () {
         function Screen(width, height, divID) {
             var _this = this;
@@ -436,6 +499,7 @@ var CombatPong;
 (function (CombatPong) {
     var StageData = (function () {
         function StageData(stage, baseWidth, baseHeight) {
+            this.isNetEnabled = true;
             this.stage = stage;
 
             this.UI = new Kinetic.Layer();
@@ -449,6 +513,8 @@ var CombatPong;
 
             this.baseWidth = baseWidth;
             this.baseHeight = baseHeight;
+
+            this.peerMan = new CombatPong.PeerMan();
         }
         return StageData;
     })();
