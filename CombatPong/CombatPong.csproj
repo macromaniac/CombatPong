@@ -36,6 +36,7 @@
     <TypeScriptCompile Include="Src\CollisionManager.ts" />
     <TypeScriptCompile Include="Src\Game.ts" />
     <TypeScriptCompile Include="Src\GameHostingInterface.ts" />
+    <TypeScriptCompile Include="Src\GameHostingManager.ts" />
     <TypeScriptCompile Include="Src\GameObject.ts" />
     <TypeScriptCompile Include="Src\InteractiveGraphic.ts" />
     <TypeScriptCompile Include="Src\KeyMan.ts" />

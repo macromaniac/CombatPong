@@ -126,7 +126,7 @@ var CombatPong;
                     var b = this.gameObjects[rightBound];
 
                     var response = a.retreiveCollisionData();
-                    var flippedResponse = CombatPong.Util.copyAndFlipResponse(response);
+                    var flippedResponse = Util.Graphics.copyAndFlipResponse(response);
 
                     a.triggerAnotherObjectsCollision(b, response);
                     b.triggerAnotherObjectsCollision(a, flippedResponse);
@@ -205,36 +205,174 @@ var CombatPong;
     CombatPong.Timer = Timer;
     ;
 })(CombatPong || (CombatPong = {}));
+var Util;
+(function (Util) {
+    var Conf = (function () {
+        function Conf() {
+        }
+        Conf.hostURL = "http://localhost";
+        Conf.peerPort = 9000;
+        Conf.socketPort = 23156;
+        return Conf;
+    })();
+    Util.Conf = Conf;
+    var Math = (function () {
+        function Math() {
+        }
+        Math.isNumberWithinBounds = function (num, leftBound, rightBound) {
+            if (num >= leftBound && num <= rightBound)
+                return true;
+            return false;
+        };
+        return Math;
+    })();
+    Util.Math = Math;
+    ;
+    var Graphics = (function () {
+        function Graphics() {
+        }
+        Graphics.copyAndFlipResponse = function (response) {
+            var flippedResponse = new SAT.Response();
+            flippedResponse.overlapV = response.overlapV.reverse();
+            flippedResponse.overlapN = response.overlapN.reverse();
+            flippedResponse.overlap = response.overlap;
+            return flippedResponse;
+        };
+        Graphics.isCircle = function (obj) {
+            var type = obj.getClassName();
+            if (type == "Circle")
+                return true;
+            return false;
+        };
+        Graphics.isPolygon = function (obj) {
+            var type = obj.getClassName();
+            if (type == "Line")
+                return true;
+            return false;
+        };
+        Graphics.genRectLines = function (x, y, width, height) {
+            var line = new Kinetic.Line({});
+
+            //line.x(x);
+            //line.y(y);
+            var points = [];
+            points.push(x, y);
+            points.push(x + width, y + 0);
+            points.push(x + width, y + height);
+            points.push(x + 0, y + height);
+
+            line.setPoints(points);
+            line.closed(true);
+            return line;
+        };
+        return Graphics;
+    })();
+    Util.Graphics = Graphics;
+    ;
+    var Interface = (function () {
+        function Interface() {
+        }
+        Interface.addStandardButton = function (buttonText) {
+            var b = document.createElement("BUTTON");
+            var t = document.createTextNode(buttonText);
+            b.appendChild(t);
+            b.style.margin = "0px";
+            b.style.padding = "0px";
+            b.style.zIndex = "100";
+            b.style.top = "auto";
+            b.style.left = "10px";
+            Interface.d.appendChild(b);
+            return b;
+        };
+        Interface.clearInterface = function () {
+            while (Interface.d.firstChild)
+                Interface.d.removeChild(Interface.d.firstChild);
+        };
+        Interface.d = document.createElement("div");
+        return Interface;
+    })();
+    Util.Interface = Interface;
+    ;
+
+    //here we create the absolute Div that way we can draw things on top of the canvas
+    Interface.d.style.position = "absolute";
+    Interface.d.style.top = "10px";
+    Interface.d.style.margin = "0px";
+    document.body.appendChild(Interface.d);
+})(Util || (Util = {}));
+/// <reference path="utilityfunctions.ts" />
 var CombatPong;
 (function (CombatPong) {
     var GameHostingInterface = (function () {
         function GameHostingInterface(stageData) {
             this.stageData = stageData;
             this.displayButtons();
+            this.gameHostingManager = new CombatPong.GameHostingManager(this.stageData, this.updateGameListing);
             //if (stageData.isNetEnabled)
             //	this.displayButtons();
         }
-        GameHostingInterface.prototype.displayButtons = function () {
-            var b = document.createElement("BUTTON");
-            var t = document.createTextNode("CLICK ME");
-            b.appendChild(t);
-            b.style.margin = "0px";
-            b.style.padding = "0px";
-            b.style.zIndex = "100";
-            b.style.position = "absolute";
-            b.style.display = "block";
-            b.style.top = "10px";
-            b.style.left = "10px";
-            b.style.marginTop = "10px";
-            document.body.appendChild(b);
-            //b.style.margin = "0px";
+        GameHostingInterface.prototype.updateGameListing = function (peerIDS) {
+            alert("ARRG");
         };
-        GameHostingInterface.prototype.hideButtons = function () {
+        GameHostingInterface.prototype.displayButtons = function () {
+            this.clearInterface();
+            if (this.stageData.isNetEnabled == false) {
+                this.displayCouldNotContactServer();
+                return;
+            }
+
+            this.displayJoinableGame("Game 1");
+            this.displayJoinableGame("Game 2");
+            this.displayHostOption();
+        };
+        GameHostingInterface.prototype.displayJoinableGame = function (gameTitle) {
+            var t = document.createTextNode(gameTitle + "-----");
+            Util.Interface.d.appendChild(t);
+            var b = Util.Interface.addStandardButton("Join");
+            Util.Interface.d.appendChild(document.createElement("br"));
+        };
+        GameHostingInterface.prototype.displayHostOption = function () {
+            Util.Interface.addStandardButton("Host Game");
+        };
+        GameHostingInterface.prototype.clearInterface = function () {
+            Util.Interface.clearInterface();
+        };
+        GameHostingInterface.prototype.displayCouldNotContactServer = function () {
+            this.clearInterface();
+            var t = document.createTextNode("Could not connect to lobby");
+            Util.Interface.d.appendChild(t);
         };
         return GameHostingInterface;
     })();
     CombatPong.GameHostingInterface = GameHostingInterface;
     ;
+})(CombatPong || (CombatPong = {}));
+/// <reference path="../socket.io-client.d.ts" />
+var CombatPong;
+(function (CombatPong) {
+    var GameHostingManager = (function () {
+        function GameHostingManager(stageData, updateGameListingCallback) {
+            this.isConnected = false;
+            this.stageData = stageData;
+            this.updateGameListingCallback = updateGameListingCallback;
+            this.connectToGameHostingServer();
+        }
+        GameHostingManager.prototype.connectToGameHostingServer = function () {
+            var socket = io.connect('http://localhost:23156');
+            socket.on('news', function (data) {
+                console.log(data);
+                socket.emit('my other event', { my: 'data' });
+            });
+            socket.emit('my other event', { my: 'data' });
+            //socket.on('GameListing', this.getGameListing);
+        };
+        GameHostingManager.prototype.getGameListing = function (data) {
+            var peerIDS = [];
+            this.updateGameListingCallback(peerIDS);
+        };
+        return GameHostingManager;
+    })();
+    CombatPong.GameHostingManager = GameHostingManager;
 })(CombatPong || (CombatPong = {}));
 var CombatPong;
 (function (CombatPong) {
@@ -266,13 +404,13 @@ var CombatPong;
             var objList = container.toArray();
             for (var i = 0; i < objList.length; ++i) {
                 var child = objList[i];
-                if (CombatPong.Util.isCircle(child)) {
+                if (Util.Graphics.isCircle(child)) {
                     var circleChild = child;
                     var scale = circleChild.scale();
                     this.considerPointForMinMax(circleChild.x() - circleChild.radius() * scale.x);
                     this.considerPointForMinMax(circleChild.x() + circleChild.radius() * scale.y);
                     this.satCircles.push(new SAT.Circle(new SAT.Vector(circleChild.x(), circleChild.y()), circleChild.radius() * scale.x));
-                } else if (CombatPong.Util.isPolygon(child)) {
+                } else if (Util.Graphics.isPolygon(child)) {
                     var polygonChild = child;
 
                     var disp = new SAT.Vector(polygonChild.getX(), polygonChild.getY());
@@ -308,9 +446,9 @@ var CombatPong;
             var max = this.maxX;
             var leftBound = otherGraphic.minX;
             var rightBound = otherGraphic.maxX;
-            if (CombatPong.Util.isNumberWithinBounds(min, leftBound, rightBound))
+            if (Util.Math.isNumberWithinBounds(min, leftBound, rightBound))
                 return true;
-            if (CombatPong.Util.isNumberWithinBounds(max, leftBound, rightBound))
+            if (Util.Math.isNumberWithinBounds(max, leftBound, rightBound))
                 return true;
             return false;
         };
@@ -555,55 +693,6 @@ var CombatPong;
 })(CombatPong || (CombatPong = {}));
 var CombatPong;
 (function (CombatPong) {
-    var Util = (function () {
-        function Util() {
-        }
-        Util.isNumberWithinBounds = function (num, leftBound, rightBound) {
-            if (num >= leftBound && num <= rightBound)
-                return true;
-            return false;
-        };
-
-        Util.isCircle = function (obj) {
-            var type = obj.getClassName();
-            if (type == "Circle")
-                return true;
-            return false;
-        };
-        Util.isPolygon = function (obj) {
-            var type = obj.getClassName();
-            if (type == "Line")
-                return true;
-            return false;
-        };
-        Util.genRectLines = function (x, y, width, height) {
-            var line = new Kinetic.Line({});
-
-            //line.x(x);
-            //line.y(y);
-            var points = [];
-            points.push(x, y);
-            points.push(x + width, y + 0);
-            points.push(x + width, y + height);
-            points.push(x + 0, y + height);
-
-            line.setPoints(points);
-            line.closed(true);
-            return line;
-        };
-        Util.copyAndFlipResponse = function (response) {
-            var flippedResponse = new SAT.Response();
-            flippedResponse.overlapV = response.overlapV.reverse();
-            flippedResponse.overlapN = response.overlapN.reverse();
-            flippedResponse.overlap = response.overlap;
-            return flippedResponse;
-        };
-        return Util;
-    })();
-    CombatPong.Util = Util;
-})(CombatPong || (CombatPong = {}));
-var CombatPong;
-(function (CombatPong) {
     var Wall = (function (_super) {
         __extends(Wall, _super);
         function Wall(stageData, x, y, width, height) {
@@ -611,7 +700,7 @@ var CombatPong;
             this.spawnWithParams(x, y, width, height);
         }
         Wall.prototype.spawnWithParams = function (x, y, width, height) {
-            this.rect = CombatPong.Util.genRectLines(0, 0, width, height);
+            this.rect = Util.Graphics.genRectLines(0, 0, width, height);
             this.rect.x(x);
             this.rect.y(y);
             this.rect.fill(Wall.defaultWallColor);

@@ -32,7 +32,6 @@
     <Compile Include="app.js" />
     <Content Include="node-0.8.8.d.ts" />
     <Content Include="package.json" />
-    <Content Include="app.ts" />
   </ItemGroup>
   <Import Project="$(VSToolsPath)\Node.js Tools\Microsoft.NodejsTools.targets" />
   <ProjectExtensions>

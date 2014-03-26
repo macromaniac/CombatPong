@@ -6,5 +6,11 @@
   "author": {
     "name": "Joeamd12-24-09",
     "email": ""
+  },
+  "dependencies": {
+    "socket.io": "^0.9.16",
+    "peer": "^0.2.4",
+    "restify": "^2.6.3",
+    "express": "^3.5.1"
   }
 }

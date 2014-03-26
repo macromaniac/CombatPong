@@ -40,7 +40,7 @@
             var objList: any[] = container.toArray();
             for (var i: number = 0; i < objList.length; ++i) {
                 var child = objList[i];
-                if (Util.isCircle(child)) {
+                if (Util.Graphics.isCircle(child)) {
                     var circleChild = <Kinetic.Circle>child;
                     var scale = circleChild.scale();
                     this.considerPointForMinMax(circleChild.x() - circleChild.radius() * scale.x);
@@ -48,7 +48,7 @@
                     this.satCircles.push(
                         new SAT.Circle(new SAT.Vector(circleChild.x(),
                             circleChild.y()), circleChild.radius() * scale.x));
-                } else if (Util.isPolygon(child)) {
+                } else if (Util.Graphics.isPolygon(child)) {
                     var polygonChild = <Kinetic.Line>child;
 
                     var disp = new SAT.Vector(polygonChild.getX(), polygonChild.getY());
@@ -83,9 +83,9 @@
             var max = this.maxX;
             var leftBound = otherGraphic.minX;
             var rightBound = otherGraphic.maxX;
-            if (Util.isNumberWithinBounds(min, leftBound, rightBound))
+            if (Util.Math.isNumberWithinBounds(min, leftBound, rightBound))
                 return true;
-            if (Util.isNumberWithinBounds(max, leftBound, rightBound))
+            if (Util.Math.isNumberWithinBounds(max, leftBound, rightBound))
                 return true;
             return false;
         }

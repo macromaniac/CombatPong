@@ -8,7 +8,7 @@
             this.spawnWithParams(x, y, width, height);
 		}
         spawnWithParams(x: number, y: number, width: number, height: number) {
-            this.rect = Util.genRectLines(0, 0, width, height);
+            this.rect = Util.Graphics.genRectLines(0, 0, width, height);
             this.rect.x(x);
             this.rect.y(y);
 			this.rect.fill(Wall.defaultWallColor);

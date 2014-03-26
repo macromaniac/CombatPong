@@ -48,7 +48,7 @@
                     var b: GameObject = this.gameObjects[rightBound];
 
                     var response: SAT.Response = a.retreiveCollisionData();
-                    var flippedResponse: SAT.Response = Util.copyAndFlipResponse(response);
+					var flippedResponse: SAT.Response = Util.Graphics.copyAndFlipResponse(response);
 
                     a.triggerAnotherObjectsCollision(b, response);
                     b.triggerAnotherObjectsCollision(a, flippedResponse);
