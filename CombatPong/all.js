@@ -1,5 +1,86 @@
 ﻿var CombatPong;
 (function (CombatPong) {
+    var screen;
+    window.onload = function () {
+        screen = new CombatPong.Screen(960, 540, 'content');
+        screen.fitStageToScreen();
+    };
+    window.onresize = function () {
+        if (screen)
+            screen.fitStageToScreen();
+    };
+})(CombatPong || (CombatPong = {}));
+var CombatPong;
+(function (CombatPong) {
+    var GameObject = (function () {
+        function GameObject(stageData) {
+            this.stageData = stageData;
+            this.graphic = new Kinetic.Group({});
+            this.spawn();
+            this.stageData.foreground.add(this.graphic);
+            this.interactiveGraphic = new CombatPong.InteractiveGraphic(this.stageData, this.graphic);
+        }
+        GameObject.prototype.spawn = function () {
+        };
+        GameObject.prototype.triggerAnotherObjectsCollision = function (receiver, response) {
+            var i = 4;
+        };
+
+        GameObject.prototype.tick = function () {
+        };
+        GameObject.prototype.checkForCollision = function (otherGameObject) {
+            return this.interactiveGraphic.SATcollisionTest(otherGameObject.interactiveGraphic);
+        };
+        GameObject.prototype.retreiveCollisionData = function () {
+            return this.interactiveGraphic.satResponse;
+        };
+        GameObject.prototype.checkForRoughCollision = function (otherGameObject) {
+            return this.interactiveGraphic.roughCollisionTest(otherGameObject.interactiveGraphic);
+        };
+        GameObject.prototype.onWallCollision = function (wall, response) {
+        };
+        GameObject.prototype.onBallCollision = function (ball, response) {
+        };
+        return GameObject;
+    })();
+    CombatPong.GameObject = GameObject;
+})(CombatPong || (CombatPong = {}));
+/// <reference path="collision/gameobject.ts" />
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+var CombatPong;
+(function (CombatPong) {
+    var Ball = (function (_super) {
+        __extends(Ball, _super);
+        function Ball(stageData, x, y, radius) {
+            _super.call(this, stageData);
+            this.spawnWithParamaters(x, y, radius);
+        }
+        Ball.prototype.spawnWithParamaters = function (x, y, radius) {
+            this.circle = new Kinetic.Circle({ x: x, y: y, radius: radius });
+            this.circle.fill(Ball.defaultBallColor);
+            this.graphic.add(this.circle);
+        };
+
+        Ball.prototype.onWallCollision = function (wall, response) {
+            this.circle.fill("Red");
+        };
+        Ball.prototype.triggerAnotherObjectsCollision = function (otherGameObject, response) {
+            otherGameObject.onBallCollision(this, this.retreiveCollisionData());
+        };
+        Ball.prototype.tick = function () {
+        };
+        Ball.defaultBallColor = "Black";
+        return Ball;
+    })(CombatPong.GameObject);
+    CombatPong.Ball = Ball;
+})(CombatPong || (CombatPong = {}));
+var CombatPong;
+(function (CombatPong) {
     var CollisionManager = (function () {
         function CollisionManager(stageData, gameObjects) {
             this.stageData = stageData;
@@ -78,67 +159,267 @@
 })(CombatPong || (CombatPong = {}));
 var CombatPong;
 (function (CombatPong) {
-    var World = (function () {
-        function World(stageData) {
+    var Game = (function () {
+        function Game(stageData) {
+            this.logicFrameLengthInMS = 1 / 50 * 1000;
+            this.tickNumber = 0;
+            this.expectedTickNumber = 0;
             this.stageData = stageData;
-            this.worldObjects = [];
-            this.createWalls();
-            this.collisionManager = new CombatPong.CollisionManager(this.stageData, this.worldObjects);
+            this.world = new CombatPong.World(stageData);
+            this.peerMan = new CombatPong.PeerMan();
+            this.gameHostingInterface = new CombatPong.GameHostingInterface(stageData);
         }
-        World.prototype.createWalls = function () {
-            var heightOfWalls = this.stageData.baseHeight / 20;
-            var widthOfWalls = this.stageData.baseWidth;
-            this.worldObjects.push(new CombatPong.Wall(this.stageData, 0, 0, widthOfWalls, heightOfWalls));
-
-            this.worldObjects.push(new CombatPong.Wall(this.stageData, 0, this.stageData.baseHeight - heightOfWalls, widthOfWalls, heightOfWalls));
-
-            this.worldObjects.push(new CombatPong.Ball(this.stageData, this.stageData.baseWidth / 2, this.stageData.baseHeight / 2, this.stageData.baseHeight / 50));
+        Game.prototype.tick = function () {
+            this.regulatedTick();
         };
-        World.prototype.tick = function () {
-            for (var i = 0; i < this.worldObjects.length; ++i) {
-                this.worldObjects[i].tick();
+
+        Game.prototype.regulatedTick = function () {
+            this.expectedTickNumber = this.peerMan.timeSinceStartMS() / this.logicFrameLengthInMS;
+            while (this.expectedTickNumber > this.tickNumber) {
+                if (this.isNetworkTick(this.tickNumber))
+                    this.peerMan.tick();
+                this.world.tick();
+                this.tickNumber++;
             }
-            this.collisionManager.updateCollisions();
         };
-        return World;
+        Game.prototype.isNetworkTick = function (tickNo) {
+            if (this.stageData.isNetEnabled == false)
+                return false;
+            var prevTickTime = this.logicFrameLengthInMS * (tickNo - 1);
+            var tickTime = this.logicFrameLengthInMS * tickNo;
+            var networkTickForPrevTickTime = Math.floor(prevTickTime / CombatPong.PeerMan.defaultNetworkFrameLengthInMS);
+            var networkTickForCurrentTickTime = Math.floor(tickTime / CombatPong.PeerMan.defaultNetworkFrameLengthInMS);
+            if (networkTickForCurrentTickTime > networkTickForPrevTickTime)
+                return true;
+            return false;
+        };
+        return Game;
     })();
-    CombatPong.World = World;
+    CombatPong.Game = Game;
+    ;
+    var Timer = (function () {
+        function Timer() {
+        }
+        return Timer;
+    })();
+    CombatPong.Timer = Timer;
     ;
 })(CombatPong || (CombatPong = {}));
+var Util;
+(function (Util) {
+    var Conf = (function () {
+        function Conf() {
+        }
+        Conf.hostURL = "http://localhost:23156";
+        Conf.peerPort = 9000;
+        Conf.socketPort = 23156;
+        Conf.forceDisableNet = false;
+        Conf.forceEnableNet = false;
+        return Conf;
+    })();
+    Util.Conf = Conf;
+    var Math = (function () {
+        function Math() {
+        }
+        Math.isNumberWithinBounds = function (num, leftBound, rightBound) {
+            if (num >= leftBound && num <= rightBound)
+                return true;
+            return false;
+        };
+        return Math;
+    })();
+    Util.Math = Math;
+    ;
+    var Graphics = (function () {
+        function Graphics() {
+        }
+        Graphics.copyAndFlipResponse = function (response) {
+            var flippedResponse = new SAT.Response();
+            flippedResponse.overlapV = response.overlapV.reverse();
+            flippedResponse.overlapN = response.overlapN.reverse();
+            flippedResponse.overlap = response.overlap;
+            return flippedResponse;
+        };
+        Graphics.isCircle = function (obj) {
+            var type = obj.getClassName();
+            if (type == "Circle")
+                return true;
+            return false;
+        };
+        Graphics.isPolygon = function (obj) {
+            var type = obj.getClassName();
+            if (type == "Line")
+                return true;
+            return false;
+        };
+        Graphics.genRectLines = function (x, y, width, height) {
+            var line = new Kinetic.Line({});
+
+            //line.x(x);
+            //line.y(y);
+            var points = [];
+            points.push(x, y);
+            points.push(x + width, y + 0);
+            points.push(x + width, y + height);
+            points.push(x + 0, y + height);
+
+            line.setPoints(points);
+            line.closed(true);
+            return line;
+        };
+        return Graphics;
+    })();
+    Util.Graphics = Graphics;
+    ;
+    var Interface = (function () {
+        function Interface() {
+        }
+        Interface.addStandardButton = function (buttonText) {
+            var b = document.createElement("BUTTON");
+            var t = document.createTextNode(buttonText);
+            b.appendChild(t);
+            b.style.margin = "0px";
+            b.style.padding = "0px";
+            b.style.zIndex = "100";
+            b.style.top = "auto";
+            b.style.left = "10px";
+            Interface.d.appendChild(b);
+            return b;
+        };
+        Interface.clearInterface = function () {
+            while (Interface.d.firstChild)
+                Interface.d.removeChild(Interface.d.firstChild);
+        };
+        Interface.d = document.createElement("div");
+        return Interface;
+    })();
+    Util.Interface = Interface;
+    ;
+
+    //here we create the absolute Div that way we can draw things on top of the canvas
+    Interface.d.style.position = "absolute";
+    Interface.d.style.top = "10px";
+    Interface.d.style.margin = "0px";
+    document.body.appendChild(Interface.d);
+})(Util || (Util = {}));
+/// <reference path="../utilityfunctions.ts" />
 var CombatPong;
 (function (CombatPong) {
-    var GameObject = (function () {
-        function GameObject(stageData) {
+    var GameHostingInterface = (function () {
+        function GameHostingInterface(stageData) {
+            var _this = this;
+            this.updateGameListing = function (peerIDS) {
+                _this.clearInterface();
+                Util.Interface.d.appendChild(document.createTextNode("Combat Pong"));
+                Util.Interface.d.appendChild(document.createElement("br"));
+                if (_this.stageData.isNetEnabled == false) {
+                    _this.displayCouldNotContactServer();
+                    return;
+                }
+                for (var i = 0; i < peerIDS.length; ++i) {
+                    _this.displayJoinableGame("Game " + i.toString(), peerIDS[i]);
+                }
+                _this.displayHostOption();
+            };
+            this.hostGame = function () {
+                _this.gameHostingManager.hostGame("TEST");
+                _this.gameHostingManager.requestList();
+            };
             this.stageData = stageData;
-            this.graphic = new Kinetic.Group({});
-            this.spawn();
-            this.stageData.foreground.add(this.graphic);
-            this.interactiveGraphic = new CombatPong.InteractiveGraphic(this.stageData, this.graphic);
+            this.gameHostingManager = new CombatPong.GameHostingManager(this.stageData, this.updateGameListing);
+            //if (stageData.isNetEnabled)
+            //	this.displayButtons();
         }
-        GameObject.prototype.spawn = function () {
+        GameHostingInterface.prototype.displayJoinableGame = function (gameTitle, gameID) {
+            var _this = this;
+            var t = document.createTextNode(gameTitle + "-----");
+            Util.Interface.d.appendChild(t);
+            var b = Util.Interface.addStandardButton("Join");
+            b.onclick = function () {
+                _this.joinGame(gameID);
+            };
+            Util.Interface.d.appendChild(document.createElement("br"));
         };
-        GameObject.prototype.triggerAnotherObjectsCollision = function (receiver, response) {
-            var i = 4;
+        GameHostingInterface.prototype.displayHostOption = function () {
+            var b = Util.Interface.addStandardButton("Host Game");
+            b.onclick = this.hostGame;
+            if (this.gameHostingManager.isHosting()) {
+                Util.Interface.d.appendChild(document.createElement("br"));
+                Util.Interface.d.appendChild(document.createTextNode("You are currently hosting a game"));
+            }
         };
 
-        GameObject.prototype.tick = function () {
+        GameHostingInterface.prototype.clearInterface = function () {
+            Util.Interface.clearInterface();
         };
-        GameObject.prototype.checkForCollision = function (otherGameObject) {
-            return this.interactiveGraphic.SATcollisionTest(otherGameObject.interactiveGraphic);
+        GameHostingInterface.prototype.joinGame = function (game) {
+            this.gameHostingManager.stopHostingGame();
+            this.gameHostingManager.requestList();
+            //alert("Joined game " + game.toString());
         };
-        GameObject.prototype.retreiveCollisionData = function () {
-            return this.interactiveGraphic.satResponse;
+        GameHostingInterface.prototype.displayCouldNotContactServer = function () {
+            this.clearInterface();
+            var t = document.createTextNode("Could not connect to lobby");
+            Util.Interface.d.appendChild(t);
         };
-        GameObject.prototype.checkForRoughCollision = function (otherGameObject) {
-            return this.interactiveGraphic.roughCollisionTest(otherGameObject.interactiveGraphic);
-        };
-        GameObject.prototype.onWallCollision = function (wall, response) {
-        };
-        GameObject.prototype.onBallCollision = function (ball, response) {
-        };
-        return GameObject;
+        return GameHostingInterface;
     })();
-    CombatPong.GameObject = GameObject;
+    CombatPong.GameHostingInterface = GameHostingInterface;
+    ;
+})(CombatPong || (CombatPong = {}));
+/// <reference path="../../socket.io-client.d.ts" />
+var CombatPong;
+(function (CombatPong) {
+    var GameHostingManager = (function () {
+        function GameHostingManager(stageData, updateGameListingCallback) {
+            var _this = this;
+            this.requestList = function () {
+                _this.socket.emit('Check If Hosting', {});
+                _this.socket.emit('Request GameList', {});
+            };
+            this.isConnected = false;
+            this.amIHosting = false;
+            this.stageData = stageData;
+            this.updateGameListingCallback = updateGameListingCallback;
+            this.connectToGameHostingServer();
+        }
+        GameHostingManager.prototype.connectToGameHostingServer = function () {
+            var _this = this;
+            this.socket = io.connect(Util.Conf.hostURL);
+
+            this.socket.on('connect', function () {
+                _this.isConnected = true;
+                _this.timeout = setTimeout(_this.requestList, 2000);
+                _this.requestList();
+            });
+
+            this.socket.on('disconnect', function () {
+                _this.isConnected = false;
+                clearTimeout(_this.timeout);
+            });
+
+            this.socket.on('Update Hosting Info', function (data) {
+                _this.amIHosting = data.amIHosting;
+            });
+
+            this.socket.on('GameList', this.updateGameListingCallback);
+        };
+
+        GameHostingManager.prototype.hostGame = function (gameID) {
+            this.socket.emit('Host Game', gameID);
+            this.amIHosting = true;
+        };
+        GameHostingManager.prototype.stopHostingGame = function () {
+            this.socket.emit('Stop Hosting Game', {});
+            this.amIHosting = false;
+        };
+
+        GameHostingManager.prototype.isHosting = function () {
+            return this.amIHosting;
+        };
+        return GameHostingManager;
+    })();
+    CombatPong.GameHostingManager = GameHostingManager;
 })(CombatPong || (CombatPong = {}));
 var CombatPong;
 (function (CombatPong) {
@@ -248,283 +529,117 @@ var CombatPong;
     CombatPong.InteractiveGraphic = InteractiveGraphic;
     ;
 })(CombatPong || (CombatPong = {}));
-/// <reference path="collision/gameobject.ts" />
-var __extends = this.__extends || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
-};
-var CombatPong;
-(function (CombatPong) {
-    var Ball = (function (_super) {
-        __extends(Ball, _super);
-        function Ball(stageData, x, y, radius) {
-            _super.call(this, stageData);
-            this.spawnWithParamaters(x, y, radius);
+var MWG;
+(function (MWG) {
+    (function (ButtonCode) {
+        ButtonCode[ButtonCode["Shift"] = 16] = "Shift";
+        ButtonCode[ButtonCode["Ctrl"] = 17] = "Ctrl";
+        ButtonCode[ButtonCode["Alt"] = 18] = "Alt";
+        ButtonCode[ButtonCode["Left"] = 37] = "Left";
+        ButtonCode[ButtonCode["Up"] = 38] = "Up";
+        ButtonCode[ButtonCode["Right"] = 39] = "Right";
+        ButtonCode[ButtonCode["Down"] = 40] = "Down";
+        ButtonCode[ButtonCode["Zero"] = 48] = "Zero";
+        ButtonCode[ButtonCode["One"] = 49] = "One";
+        ButtonCode[ButtonCode["Two"] = 50] = "Two";
+        ButtonCode[ButtonCode["Three"] = 51] = "Three";
+        ButtonCode[ButtonCode["Four"] = 52] = "Four";
+        ButtonCode[ButtonCode["Five"] = 53] = "Five";
+        ButtonCode[ButtonCode["Six"] = 54] = "Six";
+        ButtonCode[ButtonCode["Seven"] = 55] = "Seven";
+        ButtonCode[ButtonCode["Eight"] = 56] = "Eight";
+        ButtonCode[ButtonCode["Nine"] = 57] = "Nine";
+        ButtonCode[ButtonCode["A"] = 65] = "A";
+        ButtonCode[ButtonCode["B"] = 66] = "B";
+        ButtonCode[ButtonCode["C"] = 67] = "C";
+        ButtonCode[ButtonCode["D"] = 68] = "D";
+        ButtonCode[ButtonCode["E"] = 69] = "E";
+        ButtonCode[ButtonCode["F"] = 70] = "F";
+        ButtonCode[ButtonCode["G"] = 71] = "G";
+        ButtonCode[ButtonCode["H"] = 72] = "H";
+        ButtonCode[ButtonCode["I"] = 73] = "I";
+        ButtonCode[ButtonCode["J"] = 74] = "J";
+        ButtonCode[ButtonCode["K"] = 75] = "K";
+        ButtonCode[ButtonCode["L"] = 76] = "L";
+        ButtonCode[ButtonCode["M"] = 77] = "M";
+        ButtonCode[ButtonCode["N"] = 78] = "N";
+        ButtonCode[ButtonCode["O"] = 79] = "O";
+        ButtonCode[ButtonCode["P"] = 80] = "P";
+        ButtonCode[ButtonCode["Q"] = 81] = "Q";
+        ButtonCode[ButtonCode["R"] = 82] = "R";
+        ButtonCode[ButtonCode["S"] = 83] = "S";
+        ButtonCode[ButtonCode["T"] = 84] = "T";
+        ButtonCode[ButtonCode["U"] = 85] = "U";
+        ButtonCode[ButtonCode["V"] = 86] = "V";
+        ButtonCode[ButtonCode["W"] = 87] = "W";
+        ButtonCode[ButtonCode["X"] = 88] = "X";
+        ButtonCode[ButtonCode["Y"] = 89] = "Y";
+        ButtonCode[ButtonCode["Z"] = 90] = "Z";
+    })(MWG.ButtonCode || (MWG.ButtonCode = {}));
+    var ButtonCode = MWG.ButtonCode;
+    var buttonMax = 100;
+    var KeyMan = (function () {
+        function KeyMan() {
         }
-        Ball.prototype.spawnWithParamaters = function (x, y, radius) {
-            this.circle = new Kinetic.Circle({ x: x, y: y, radius: radius });
-            this.circle.fill(Ball.defaultBallColor);
-            this.graphic.add(this.circle);
+        KeyMan.isButtonDown = function (buttonCode) {
+            return KeyManUtil.buttonDownBooleans[buttonCode];
         };
+        return KeyMan;
+    })();
+    MWG.KeyMan = KeyMan;
 
-        Ball.prototype.onWallCollision = function (wall, response) {
-            this.circle.fill("Red");
-        };
-        Ball.prototype.triggerAnotherObjectsCollision = function (otherGameObject, response) {
-            otherGameObject.onBallCollision(this, this.retreiveCollisionData());
-        };
-        Ball.prototype.tick = function () {
-        };
-        Ball.defaultBallColor = "Black";
-        return Ball;
-    })(CombatPong.GameObject);
-    CombatPong.Ball = Ball;
-})(CombatPong || (CombatPong = {}));
-var CombatPong;
-(function (CombatPong) {
-    var Game = (function () {
-        function Game(stageData) {
-            this.logicFrameLengthInMS = 1 / 50 * 1000;
-            this.tickNumber = 0;
-            this.expectedTickNumber = 0;
-            this.stageData = stageData;
-            this.world = new CombatPong.World(stageData);
-            this.peerMan = new CombatPong.PeerMan();
-            this.gameHostingInterface = new CombatPong.GameHostingInterface(stageData);
+    //Hide this class
+    var KeyManUtil = (function () {
+        function KeyManUtil() {
         }
-        Game.prototype.tick = function () {
-            this.regulatedTick();
-        };
-
-        Game.prototype.regulatedTick = function () {
-            this.expectedTickNumber = this.peerMan.timeSinceStartMS() / this.logicFrameLengthInMS;
-            while (this.expectedTickNumber > this.tickNumber) {
-                if (this.isNetworkTick(this.tickNumber))
-                    this.peerMan.tick();
-                this.world.tick();
-                this.tickNumber++;
+        KeyManUtil.generateButtonMapArray = function () {
+            while (this.buttonDownBooleans.length < buttonMax) {
+                KeyManUtil.buttonDownBooleans.push(false);
             }
         };
-        Game.prototype.isNetworkTick = function (tickNo) {
-            if (this.stageData.isNetEnabled == false)
-                return false;
-            var prevTickTime = this.logicFrameLengthInMS * (tickNo - 1);
-            var tickTime = this.logicFrameLengthInMS * tickNo;
-            var networkTickForPrevTickTime = Math.floor(prevTickTime / CombatPong.PeerMan.defaultNetworkFrameLengthInMS);
-            var networkTickForCurrentTickTime = Math.floor(tickTime / CombatPong.PeerMan.defaultNetworkFrameLengthInMS);
-            if (networkTickForCurrentTickTime > networkTickForPrevTickTime)
-                return true;
-            return false;
+        KeyManUtil.keyUpListener = function (e) {
+            KeyManUtil.buttonDownBooleans[e.keyCode] = false;
         };
-        return Game;
+        KeyManUtil.keyDownListener = function (e) {
+            KeyManUtil.buttonDownBooleans[e.keyCode] = true;
+        };
+        KeyManUtil.buttonDownBooleans = [];
+        return KeyManUtil;
     })();
-    CombatPong.Game = Game;
-    ;
-    var Timer = (function () {
-        function Timer() {
-        }
-        return Timer;
-    })();
-    CombatPong.Timer = Timer;
-    ;
-})(CombatPong || (CombatPong = {}));
+    KeyManUtil.generateButtonMapArray();
+    document.onkeyup = KeyManUtil.keyUpListener;
+    document.onkeydown = KeyManUtil.keyDownListener;
+})(MWG || (MWG = {}));
 var CombatPong;
 (function (CombatPong) {
-    var Wall = (function (_super) {
-        __extends(Wall, _super);
-        function Wall(stageData, x, y, width, height) {
-            _super.call(this, stageData);
-            this.spawnWithParams(x, y, width, height);
+    var PeerMan = (function () {
+        function PeerMan() {
         }
-        Wall.prototype.spawnWithParams = function (x, y, width, height) {
-            this.rect = Util.Graphics.genRectLines(0, 0, width, height);
-            this.rect.x(x);
-            this.rect.y(y);
-            this.rect.fill(Wall.defaultWallColor);
-            this.graphic.add(this.rect);
+        PeerMan.prototype.tick = function () {
         };
-        Wall.prototype.onBallCollision = function (ball, response) {
+        PeerMan.prototype.timeSinceStartMS = function () {
+            return 1;
         };
-        Wall.prototype.triggerAnotherObjectsCollision = function (otherGameObject, response) {
-            otherGameObject.onWallCollision(this, this.retreiveCollisionData());
-        };
-        Wall.defaultWallColor = "Black";
-        return Wall;
-    })(CombatPong.GameObject);
-    CombatPong.Wall = Wall;
-})(CombatPong || (CombatPong = {}));
-var Util;
-(function (Util) {
-    var Conf = (function () {
-        function Conf() {
-        }
-        Conf.hostURL = "http://localhost:23156";
-        Conf.peerPort = 9000;
-        Conf.socketPort = 23156;
-        Conf.forceDisableNet = false;
-        Conf.forceEnableNet = false;
-        return Conf;
+        PeerMan.defaultNetworkFrameLengthInMS = 1 / 8 * 1000;
+        return PeerMan;
     })();
-    Util.Conf = Conf;
-    var Math = (function () {
-        function Math() {
-        }
-        Math.isNumberWithinBounds = function (num, leftBound, rightBound) {
-            if (num >= leftBound && num <= rightBound)
-                return true;
-            return false;
-        };
-        return Math;
-    })();
-    Util.Math = Math;
+    CombatPong.PeerMan = PeerMan;
     ;
-    var Graphics = (function () {
-        function Graphics() {
+    var PeerManServer = (function () {
+        function PeerManServer() {
         }
-        Graphics.copyAndFlipResponse = function (response) {
-            var flippedResponse = new SAT.Response();
-            flippedResponse.overlapV = response.overlapV.reverse();
-            flippedResponse.overlapN = response.overlapN.reverse();
-            flippedResponse.overlap = response.overlap;
-            return flippedResponse;
-        };
-        Graphics.isCircle = function (obj) {
-            var type = obj.getClassName();
-            if (type == "Circle")
-                return true;
-            return false;
-        };
-        Graphics.isPolygon = function (obj) {
-            var type = obj.getClassName();
-            if (type == "Line")
-                return true;
-            return false;
-        };
-        Graphics.genRectLines = function (x, y, width, height) {
-            var line = new Kinetic.Line({});
-
-            //line.x(x);
-            //line.y(y);
-            var points = [];
-            points.push(x, y);
-            points.push(x + width, y + 0);
-            points.push(x + width, y + height);
-            points.push(x + 0, y + height);
-
-            line.setPoints(points);
-            line.closed(true);
-            return line;
-        };
-        return Graphics;
+        return PeerManServer;
     })();
-    Util.Graphics = Graphics;
+    CombatPong.PeerManServer = PeerManServer;
     ;
-    var Interface = (function () {
-        function Interface() {
+    var PeerManClient = (function () {
+        function PeerManClient(serverID) {
+            this.serverID = serverID;
         }
-        Interface.addStandardButton = function (buttonText) {
-            var b = document.createElement("BUTTON");
-            var t = document.createTextNode(buttonText);
-            b.appendChild(t);
-            b.style.margin = "0px";
-            b.style.padding = "0px";
-            b.style.zIndex = "100";
-            b.style.top = "auto";
-            b.style.left = "10px";
-            Interface.d.appendChild(b);
-            return b;
-        };
-        Interface.clearInterface = function () {
-            while (Interface.d.firstChild)
-                Interface.d.removeChild(Interface.d.firstChild);
-        };
-        Interface.d = document.createElement("div");
-        return Interface;
+        return PeerManClient;
     })();
-    Util.Interface = Interface;
+    CombatPong.PeerManClient = PeerManClient;
     ;
-
-    //here we create the absolute Div that way we can draw things on top of the canvas
-    Interface.d.style.position = "absolute";
-    Interface.d.style.top = "10px";
-    Interface.d.style.margin = "0px";
-    document.body.appendChild(Interface.d);
-})(Util || (Util = {}));
-/// <reference path="../utilityfunctions.ts" />
-var CombatPong;
-(function (CombatPong) {
-    var GameHostingInterface = (function () {
-        function GameHostingInterface(stageData) {
-            this.stageData = stageData;
-            this.displayButtons();
-            this.gameHostingManager = new CombatPong.GameHostingManager(this.stageData, this.updateGameListing);
-            //if (stageData.isNetEnabled)
-            //	this.displayButtons();
-        }
-        GameHostingInterface.prototype.updateGameListing = function (peerIDS) {
-            alert("ARRG");
-        };
-        GameHostingInterface.prototype.displayButtons = function () {
-            this.clearInterface();
-            if (this.stageData.isNetEnabled == false) {
-                this.displayCouldNotContactServer();
-                return;
-            }
-
-            this.displayJoinableGame("Game 1");
-            this.displayJoinableGame("Game 2");
-            this.displayHostOption();
-        };
-        GameHostingInterface.prototype.displayJoinableGame = function (gameTitle) {
-            var t = document.createTextNode(gameTitle + "-----");
-            Util.Interface.d.appendChild(t);
-            var b = Util.Interface.addStandardButton("Join");
-            Util.Interface.d.appendChild(document.createElement("br"));
-        };
-        GameHostingInterface.prototype.displayHostOption = function () {
-            Util.Interface.addStandardButton("Host Game");
-        };
-        GameHostingInterface.prototype.clearInterface = function () {
-            Util.Interface.clearInterface();
-        };
-        GameHostingInterface.prototype.displayCouldNotContactServer = function () {
-            this.clearInterface();
-            var t = document.createTextNode("Could not connect to lobby");
-            Util.Interface.d.appendChild(t);
-        };
-        return GameHostingInterface;
-    })();
-    CombatPong.GameHostingInterface = GameHostingInterface;
-    ;
-})(CombatPong || (CombatPong = {}));
-/// <reference path="../../socket.io-client.d.ts" />
-var CombatPong;
-(function (CombatPong) {
-    var GameHostingManager = (function () {
-        function GameHostingManager(stageData, updateGameListingCallback) {
-            this.isConnected = false;
-            this.stageData = stageData;
-            this.updateGameListingCallback = updateGameListingCallback;
-            this.connectToGameHostingServer();
-        }
-        GameHostingManager.prototype.connectToGameHostingServer = function () {
-            var socket = io.connect(Util.Conf.hostURL);
-            socket.on('news', function (data) {
-                console.log(data);
-                socket.emit('my other event', { my: 'data' });
-            });
-            socket.emit('my other event', { my: 'data' });
-            //socket.on('GameListing', this.getGameListing);
-        };
-        GameHostingManager.prototype.getGameListing = function (data) {
-            var peerIDS = [];
-            this.updateGameListingCallback(peerIDS);
-        };
-        return GameHostingManager;
-    })();
-    CombatPong.GameHostingManager = GameHostingManager;
 })(CombatPong || (CombatPong = {}));
 var CombatPong;
 (function (CombatPong) {
@@ -640,142 +755,58 @@ var CombatPong;
     })();
     CombatPong.Screen = Screen;
 })(CombatPong || (CombatPong = {}));
-var MWG;
-(function (MWG) {
-    (function (ButtonCode) {
-        ButtonCode[ButtonCode["Shift"] = 16] = "Shift";
-        ButtonCode[ButtonCode["Ctrl"] = 17] = "Ctrl";
-        ButtonCode[ButtonCode["Alt"] = 18] = "Alt";
-        ButtonCode[ButtonCode["Left"] = 37] = "Left";
-        ButtonCode[ButtonCode["Up"] = 38] = "Up";
-        ButtonCode[ButtonCode["Right"] = 39] = "Right";
-        ButtonCode[ButtonCode["Down"] = 40] = "Down";
-        ButtonCode[ButtonCode["Zero"] = 48] = "Zero";
-        ButtonCode[ButtonCode["One"] = 49] = "One";
-        ButtonCode[ButtonCode["Two"] = 50] = "Two";
-        ButtonCode[ButtonCode["Three"] = 51] = "Three";
-        ButtonCode[ButtonCode["Four"] = 52] = "Four";
-        ButtonCode[ButtonCode["Five"] = 53] = "Five";
-        ButtonCode[ButtonCode["Six"] = 54] = "Six";
-        ButtonCode[ButtonCode["Seven"] = 55] = "Seven";
-        ButtonCode[ButtonCode["Eight"] = 56] = "Eight";
-        ButtonCode[ButtonCode["Nine"] = 57] = "Nine";
-        ButtonCode[ButtonCode["A"] = 65] = "A";
-        ButtonCode[ButtonCode["B"] = 66] = "B";
-        ButtonCode[ButtonCode["C"] = 67] = "C";
-        ButtonCode[ButtonCode["D"] = 68] = "D";
-        ButtonCode[ButtonCode["E"] = 69] = "E";
-        ButtonCode[ButtonCode["F"] = 70] = "F";
-        ButtonCode[ButtonCode["G"] = 71] = "G";
-        ButtonCode[ButtonCode["H"] = 72] = "H";
-        ButtonCode[ButtonCode["I"] = 73] = "I";
-        ButtonCode[ButtonCode["J"] = 74] = "J";
-        ButtonCode[ButtonCode["K"] = 75] = "K";
-        ButtonCode[ButtonCode["L"] = 76] = "L";
-        ButtonCode[ButtonCode["M"] = 77] = "M";
-        ButtonCode[ButtonCode["N"] = 78] = "N";
-        ButtonCode[ButtonCode["O"] = 79] = "O";
-        ButtonCode[ButtonCode["P"] = 80] = "P";
-        ButtonCode[ButtonCode["Q"] = 81] = "Q";
-        ButtonCode[ButtonCode["R"] = 82] = "R";
-        ButtonCode[ButtonCode["S"] = 83] = "S";
-        ButtonCode[ButtonCode["T"] = 84] = "T";
-        ButtonCode[ButtonCode["U"] = 85] = "U";
-        ButtonCode[ButtonCode["V"] = 86] = "V";
-        ButtonCode[ButtonCode["W"] = 87] = "W";
-        ButtonCode[ButtonCode["X"] = 88] = "X";
-        ButtonCode[ButtonCode["Y"] = 89] = "Y";
-        ButtonCode[ButtonCode["Z"] = 90] = "Z";
-    })(MWG.ButtonCode || (MWG.ButtonCode = {}));
-    var ButtonCode = MWG.ButtonCode;
-    var buttonMax = 100;
-    var KeyMan = (function () {
-        function KeyMan() {
-        }
-        KeyMan.isButtonDown = function (buttonCode) {
-            return KeyManUtil.buttonDownBooleans[buttonCode];
-        };
-        return KeyMan;
-    })();
-    MWG.KeyMan = KeyMan;
-
-    //Hide this class
-    var KeyManUtil = (function () {
-        function KeyManUtil() {
-        }
-        KeyManUtil.generateButtonMapArray = function () {
-            while (this.buttonDownBooleans.length < buttonMax) {
-                KeyManUtil.buttonDownBooleans.push(false);
-            }
-        };
-        KeyManUtil.keyUpListener = function (e) {
-            KeyManUtil.buttonDownBooleans[e.keyCode] = false;
-        };
-        KeyManUtil.keyDownListener = function (e) {
-            KeyManUtil.buttonDownBooleans[e.keyCode] = true;
-        };
-        KeyManUtil.buttonDownBooleans = [];
-        return KeyManUtil;
-    })();
-    KeyManUtil.generateButtonMapArray();
-    document.onkeyup = KeyManUtil.keyUpListener;
-    document.onkeydown = KeyManUtil.keyDownListener;
-})(MWG || (MWG = {}));
 var CombatPong;
 (function (CombatPong) {
-    var PeerMan = (function () {
-        function PeerMan() {
+    var Wall = (function (_super) {
+        __extends(Wall, _super);
+        function Wall(stageData, x, y, width, height) {
+            _super.call(this, stageData);
+            this.spawnWithParams(x, y, width, height);
         }
-        PeerMan.prototype.tick = function () {
+        Wall.prototype.spawnWithParams = function (x, y, width, height) {
+            this.rect = Util.Graphics.genRectLines(0, 0, width, height);
+            this.rect.x(x);
+            this.rect.y(y);
+            this.rect.fill(Wall.defaultWallColor);
+            this.graphic.add(this.rect);
         };
-        PeerMan.prototype.timeSinceStartMS = function () {
-            return 1;
+        Wall.prototype.onBallCollision = function (ball, response) {
         };
-        PeerMan.defaultNetworkFrameLengthInMS = 1 / 8 * 1000;
-        return PeerMan;
-    })();
-    CombatPong.PeerMan = PeerMan;
-    ;
-    var PeerManServer = (function () {
-        function PeerManServer() {
-        }
-        return PeerManServer;
-    })();
-    CombatPong.PeerManServer = PeerManServer;
-    ;
-    var PeerManClient = (function () {
-        function PeerManClient(serverID) {
-            this.serverID = serverID;
-        }
-        return PeerManClient;
-    })();
-    CombatPong.PeerManClient = PeerManClient;
-    ;
+        Wall.prototype.triggerAnotherObjectsCollision = function (otherGameObject, response) {
+            otherGameObject.onWallCollision(this, this.retreiveCollisionData());
+        };
+        Wall.defaultWallColor = "Black";
+        return Wall;
+    })(CombatPong.GameObject);
+    CombatPong.Wall = Wall;
 })(CombatPong || (CombatPong = {}));
-/// <reference path="src/game/collision/collisionmanager.ts" />
-/// <reference path="src/game/world.ts" />
-/// <reference path="src/game/collision/gameobject.ts" />
-/// <reference path="src/game/collision/interactivegraphic.ts" />
-/// <reference path="src/game/ball.ts" />
-/// <reference path="src/game/game.ts" />
-/// <reference path="src/game/wall.ts" />
-/// <reference path="src/matchmaking/gamehostinginterface.ts" />
-/// <reference path="src/matchmaking/gamehostingmanager.ts" />
-/// <reference path="src/meta/screen.ts" />
-/// <reference path="src/meta/stagedata.ts" />
-/// <reference path="src/keyman.ts" />
-/// <reference path="src/peerman.ts" />
-/// <reference path="src/utilityfunctions.ts" />
 var CombatPong;
 (function (CombatPong) {
-    var screen;
-    window.onload = function () {
-        screen = new CombatPong.Screen(960, 540, 'content');
-        screen.fitStageToScreen();
-    };
-    window.onresize = function () {
-        if (screen)
-            screen.fitStageToScreen();
-    };
+    var World = (function () {
+        function World(stageData) {
+            this.stageData = stageData;
+            this.worldObjects = [];
+            this.createWalls();
+            this.collisionManager = new CombatPong.CollisionManager(this.stageData, this.worldObjects);
+        }
+        World.prototype.createWalls = function () {
+            var heightOfWalls = this.stageData.baseHeight / 20;
+            var widthOfWalls = this.stageData.baseWidth;
+            this.worldObjects.push(new CombatPong.Wall(this.stageData, 0, 0, widthOfWalls, heightOfWalls));
+
+            this.worldObjects.push(new CombatPong.Wall(this.stageData, 0, this.stageData.baseHeight - heightOfWalls, widthOfWalls, heightOfWalls));
+
+            this.worldObjects.push(new CombatPong.Ball(this.stageData, this.stageData.baseWidth / 2, this.stageData.baseHeight / 2, this.stageData.baseHeight / 50));
+        };
+        World.prototype.tick = function () {
+            for (var i = 0; i < this.worldObjects.length; ++i) {
+                this.worldObjects[i].tick();
+            }
+            this.collisionManager.updateCollisions();
+        };
+        return World;
+    })();
+    CombatPong.World = World;
+    ;
 })(CombatPong || (CombatPong = {}));
 //# sourceMappingURL=all.js.map
