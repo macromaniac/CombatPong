@@ -29,24 +29,24 @@
   </ItemGroup>
   <ItemGroup>
     <TypeScriptCompile Include="Sat.d.ts" />
-    <TypeScriptCompile Include="Src\app.ts" />
+    <TypeScriptCompile Include="app.ts" />
     <TypeScriptCompile Include="jquery.d.ts" />
     <TypeScriptCompile Include="kinetic.d.ts" />
-    <TypeScriptCompile Include="Src\Ball.ts" />
-    <TypeScriptCompile Include="Src\CollisionManager.ts" />
-    <TypeScriptCompile Include="Src\Game.ts" />
-    <TypeScriptCompile Include="Src\GameHostingInterface.ts" />
-    <TypeScriptCompile Include="Src\GameHostingManager.ts" />
-    <TypeScriptCompile Include="Src\GameObject.ts" />
-    <TypeScriptCompile Include="Src\InteractiveGraphic.ts" />
+    <TypeScriptCompile Include="Src\Game\Ball.ts" />
+    <TypeScriptCompile Include="Src\Game\Collision\CollisionManager.ts" />
+    <TypeScriptCompile Include="Src\Game\Game.ts" />
+    <TypeScriptCompile Include="Src\MatchMaking\GameHostingInterface.ts" />
+    <TypeScriptCompile Include="Src\MatchMaking\GameHostingManager.ts" />
+    <TypeScriptCompile Include="Src\Game\Collision\GameObject.ts" />
+    <TypeScriptCompile Include="Src\Game\Collision\InteractiveGraphic.ts" />
     <TypeScriptCompile Include="Src\KeyMan.ts" />
     <TypeScriptCompile Include="Src\PeerMan.ts" />
-    <TypeScriptCompile Include="Src\Screen.ts" />
+    <TypeScriptCompile Include="Src\Meta\Screen.ts" />
     <TypeScriptCompile Include="socket.io-client.d.ts" />
-    <TypeScriptCompile Include="Src\StageData.ts" />
+    <TypeScriptCompile Include="Src\Meta\StageData.ts" />
     <TypeScriptCompile Include="Src\UtilityFunctions.ts" />
-    <TypeScriptCompile Include="Src\Wall.ts" />
-    <TypeScriptCompile Include="Src\World.ts" />
+    <TypeScriptCompile Include="Src\Game\Wall.ts" />
+    <TypeScriptCompile Include="Src\Game\World.ts" />
   </ItemGroup>
   <ItemGroup>
     <None Include="web.Debug.config">
@@ -88,6 +88,7 @@
     <TypeScriptRemoveComments>false</TypeScriptRemoveComments>
     <TypeScriptSourceMap>true</TypeScriptSourceMap>
     <TypeScriptModuleKind>AMD</TypeScriptModuleKind>
+    <TypeScriptGeneratesDeclarations>False</TypeScriptGeneratesDeclarations>
     <TypeScriptOutFile>all.js</TypeScriptOutFile>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">

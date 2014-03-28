@@ -1,4 +1,4 @@
-﻿/// <reference path="../socket.io-client.d.ts" />
+﻿/// <reference path="../../socket.io-client.d.ts" />
 
 module CombatPong {
 	export class GameHostingManager {
@@ -13,7 +13,7 @@ module CombatPong {
 
 		public isConnected: boolean = false;
 		public connectToGameHostingServer() {
-			var socket = io.connect('http://localhost:23156');
+			var socket = io.connect(Util.Conf.hostURL);
 			socket.on('news', function (data) {
 				console.log(data);
 				socket.emit('my other event', { my: 'data' });

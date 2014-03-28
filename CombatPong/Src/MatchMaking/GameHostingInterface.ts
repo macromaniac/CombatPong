@@ -1,4 +1,5 @@
-﻿/// <reference path="utilityfunctions.ts" />
+﻿/// <reference path="../utilityfunctions.ts" />
+
 
 module CombatPong {
 	export class GameHostingInterface {

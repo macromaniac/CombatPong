@@ -1,6 +1,6 @@
 ﻿//var io = require('socket.io').listen(80);
 var io = require('socket.io').listen(23156);
-console.log("Z");
+console.log("Starting Socket Server");
 io.sockets.on('connection', function (socket) {
 	console.log("A");
   socket.emit('news', { hello: 'world' });

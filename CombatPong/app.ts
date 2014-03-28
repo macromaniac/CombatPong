@@ -1,5 +1,12 @@
-﻿module CombatPong {
+﻿
+module CombatPong {
+    var screen: Screen;
     window.onload = () => {
-        var screen = new Screen(600, 400, 'content');
+        screen = new Screen(960, 540, 'content');
+        screen.fitStageToScreen();
+    };
+    window.onresize = () => {
+        if(screen)
+            screen.fitStageToScreen();
     };
 }

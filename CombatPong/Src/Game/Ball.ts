@@ -1,4 +1,4 @@
-﻿/// <reference path="gameobject.ts" />
+﻿/// <reference path="collision/gameobject.ts" />
 
 module CombatPong {
     export class Ball extends GameObject {

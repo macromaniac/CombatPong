@@ -1,8 +1,10 @@
 ﻿module Util {
 	export class Conf {
-		public static hostURL: string = "http://localhost";
+		public static hostURL: string = "http://localhost:23156";
 		public static peerPort: number = 9000;
 		public static socketPort: number = 23156;
+		public static forceDisableNet: boolean = false;
+		public static forceEnableNet: boolean = false;
 	}
 	export class Math {
 		public static isNumberWithinBounds(num: number, leftBound: number, rightBound: number): boolean {
@@ -73,6 +75,5 @@
 	Interface.d.style.top = "10px";
 	Interface.d.style.margin = "0px";
 	document.body.appendChild(Interface.d);
-
 
 }

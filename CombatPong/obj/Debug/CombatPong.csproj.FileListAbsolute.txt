@@ -1,6 +1,6 @@
+C:\git\CombatPong\CombatPong\obj\Debug\CombatPong.csprojResolveAssemblyReference.cache
 C:\git\CombatPong\CombatPong\bin\CombatPong.dll.config
 C:\git\CombatPong\CombatPong\bin\CombatPong.dll
 C:\git\CombatPong\CombatPong\bin\CombatPong.pdb
-C:\git\CombatPong\CombatPong\obj\Debug\CombatPong.csprojResolveAssemblyReference.cache
 C:\git\CombatPong\CombatPong\obj\Debug\CombatPong.dll
 C:\git\CombatPong\CombatPong\obj\Debug\CombatPong.pdb

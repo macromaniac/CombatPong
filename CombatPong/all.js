@@ -1,86 +1,5 @@
 ﻿var CombatPong;
 (function (CombatPong) {
-    var screen;
-    window.onload = function () {
-        screen = new CombatPong.Screen(960, 540, 'content');
-        screen.fitStageToScreen();
-    };
-    window.onresize = function () {
-        if (screen)
-            screen.fitStageToScreen();
-    };
-})(CombatPong || (CombatPong = {}));
-var CombatPong;
-(function (CombatPong) {
-    var GameObject = (function () {
-        function GameObject(stageData) {
-            this.stageData = stageData;
-            this.graphic = new Kinetic.Group({});
-            this.spawn();
-            this.stageData.foreground.add(this.graphic);
-            this.interactiveGraphic = new CombatPong.InteractiveGraphic(this.stageData, this.graphic);
-        }
-        GameObject.prototype.spawn = function () {
-        };
-        GameObject.prototype.triggerAnotherObjectsCollision = function (receiver, response) {
-            var i = 4;
-        };
-
-        GameObject.prototype.tick = function () {
-        };
-        GameObject.prototype.checkForCollision = function (otherGameObject) {
-            return this.interactiveGraphic.SATcollisionTest(otherGameObject.interactiveGraphic);
-        };
-        GameObject.prototype.retreiveCollisionData = function () {
-            return this.interactiveGraphic.satResponse;
-        };
-        GameObject.prototype.checkForRoughCollision = function (otherGameObject) {
-            return this.interactiveGraphic.roughCollisionTest(otherGameObject.interactiveGraphic);
-        };
-        GameObject.prototype.onWallCollision = function (wall, response) {
-        };
-        GameObject.prototype.onBallCollision = function (ball, response) {
-        };
-        return GameObject;
-    })();
-    CombatPong.GameObject = GameObject;
-})(CombatPong || (CombatPong = {}));
-/// <reference path="gameobject.ts" />
-var __extends = this.__extends || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
-};
-var CombatPong;
-(function (CombatPong) {
-    var Ball = (function (_super) {
-        __extends(Ball, _super);
-        function Ball(stageData, x, y, radius) {
-            _super.call(this, stageData);
-            this.spawnWithParamaters(x, y, radius);
-        }
-        Ball.prototype.spawnWithParamaters = function (x, y, radius) {
-            this.circle = new Kinetic.Circle({ x: x, y: y, radius: radius });
-            this.circle.fill(Ball.defaultBallColor);
-            this.graphic.add(this.circle);
-        };
-
-        Ball.prototype.onWallCollision = function (wall, response) {
-            this.circle.fill("Red");
-        };
-        Ball.prototype.triggerAnotherObjectsCollision = function (otherGameObject, response) {
-            otherGameObject.onBallCollision(this, this.retreiveCollisionData());
-        };
-        Ball.prototype.tick = function () {
-        };
-        Ball.defaultBallColor = "Black";
-        return Ball;
-    })(CombatPong.GameObject);
-    CombatPong.Ball = Ball;
-})(CombatPong || (CombatPong = {}));
-var CombatPong;
-(function (CombatPong) {
     var CollisionManager = (function () {
         function CollisionManager(stageData, gameObjects) {
             this.stageData = stageData;
@@ -159,220 +78,67 @@ var CombatPong;
 })(CombatPong || (CombatPong = {}));
 var CombatPong;
 (function (CombatPong) {
-    var Game = (function () {
-        function Game(stageData) {
-            this.logicFrameLengthInMS = 1 / 50 * 1000;
-            this.tickNumber = 0;
-            this.expectedTickNumber = 0;
+    var World = (function () {
+        function World(stageData) {
             this.stageData = stageData;
-            this.world = new CombatPong.World(stageData);
-            this.peerMan = new CombatPong.PeerMan();
-            this.gameHostingInterface = new CombatPong.GameHostingInterface(stageData);
+            this.worldObjects = [];
+            this.createWalls();
+            this.collisionManager = new CombatPong.CollisionManager(this.stageData, this.worldObjects);
         }
-        Game.prototype.tick = function () {
-            this.regulatedTick();
-        };
+        World.prototype.createWalls = function () {
+            var heightOfWalls = this.stageData.baseHeight / 20;
+            var widthOfWalls = this.stageData.baseWidth;
+            this.worldObjects.push(new CombatPong.Wall(this.stageData, 0, 0, widthOfWalls, heightOfWalls));
 
-        Game.prototype.regulatedTick = function () {
-            this.expectedTickNumber = this.peerMan.timeSinceStartMS() / this.logicFrameLengthInMS;
-            while (this.expectedTickNumber > this.tickNumber) {
-                if (this.isNetworkTick(this.tickNumber))
-                    this.peerMan.tick();
-                this.world.tick();
-                this.tickNumber++;
+            this.worldObjects.push(new CombatPong.Wall(this.stageData, 0, this.stageData.baseHeight - heightOfWalls, widthOfWalls, heightOfWalls));
+
+            this.worldObjects.push(new CombatPong.Ball(this.stageData, this.stageData.baseWidth / 2, this.stageData.baseHeight / 2, this.stageData.baseHeight / 50));
+        };
+        World.prototype.tick = function () {
+            for (var i = 0; i < this.worldObjects.length; ++i) {
+                this.worldObjects[i].tick();
             }
+            this.collisionManager.updateCollisions();
         };
-        Game.prototype.isNetworkTick = function (tickNo) {
-            if (this.stageData.isNetEnabled == false)
-                return false;
-            var prevTickTime = this.logicFrameLengthInMS * (tickNo - 1);
-            var tickTime = this.logicFrameLengthInMS * tickNo;
-            var networkTickForPrevTickTime = Math.floor(prevTickTime / CombatPong.PeerMan.defaultNetworkFrameLengthInMS);
-            var networkTickForCurrentTickTime = Math.floor(tickTime / CombatPong.PeerMan.defaultNetworkFrameLengthInMS);
-            if (networkTickForCurrentTickTime > networkTickForPrevTickTime)
-                return true;
-            return false;
-        };
-        return Game;
+        return World;
     })();
-    CombatPong.Game = Game;
-    ;
-    var Timer = (function () {
-        function Timer() {
-        }
-        return Timer;
-    })();
-    CombatPong.Timer = Timer;
+    CombatPong.World = World;
     ;
 })(CombatPong || (CombatPong = {}));
-var Util;
-(function (Util) {
-    var Conf = (function () {
-        function Conf() {
-        }
-        Conf.hostURL = "http://localhost";
-        Conf.peerPort = 9000;
-        Conf.socketPort = 23156;
-        return Conf;
-    })();
-    Util.Conf = Conf;
-    var Math = (function () {
-        function Math() {
-        }
-        Math.isNumberWithinBounds = function (num, leftBound, rightBound) {
-            if (num >= leftBound && num <= rightBound)
-                return true;
-            return false;
-        };
-        return Math;
-    })();
-    Util.Math = Math;
-    ;
-    var Graphics = (function () {
-        function Graphics() {
-        }
-        Graphics.copyAndFlipResponse = function (response) {
-            var flippedResponse = new SAT.Response();
-            flippedResponse.overlapV = response.overlapV.reverse();
-            flippedResponse.overlapN = response.overlapN.reverse();
-            flippedResponse.overlap = response.overlap;
-            return flippedResponse;
-        };
-        Graphics.isCircle = function (obj) {
-            var type = obj.getClassName();
-            if (type == "Circle")
-                return true;
-            return false;
-        };
-        Graphics.isPolygon = function (obj) {
-            var type = obj.getClassName();
-            if (type == "Line")
-                return true;
-            return false;
-        };
-        Graphics.genRectLines = function (x, y, width, height) {
-            var line = new Kinetic.Line({});
-
-            //line.x(x);
-            //line.y(y);
-            var points = [];
-            points.push(x, y);
-            points.push(x + width, y + 0);
-            points.push(x + width, y + height);
-            points.push(x + 0, y + height);
-
-            line.setPoints(points);
-            line.closed(true);
-            return line;
-        };
-        return Graphics;
-    })();
-    Util.Graphics = Graphics;
-    ;
-    var Interface = (function () {
-        function Interface() {
-        }
-        Interface.addStandardButton = function (buttonText) {
-            var b = document.createElement("BUTTON");
-            var t = document.createTextNode(buttonText);
-            b.appendChild(t);
-            b.style.margin = "0px";
-            b.style.padding = "0px";
-            b.style.zIndex = "100";
-            b.style.top = "auto";
-            b.style.left = "10px";
-            Interface.d.appendChild(b);
-            return b;
-        };
-        Interface.clearInterface = function () {
-            while (Interface.d.firstChild)
-                Interface.d.removeChild(Interface.d.firstChild);
-        };
-        Interface.d = document.createElement("div");
-        return Interface;
-    })();
-    Util.Interface = Interface;
-    ;
-
-    //here we create the absolute Div that way we can draw things on top of the canvas
-    Interface.d.style.position = "absolute";
-    Interface.d.style.top = "10px";
-    Interface.d.style.margin = "0px";
-    document.body.appendChild(Interface.d);
-})(Util || (Util = {}));
-/// <reference path="utilityfunctions.ts" />
 var CombatPong;
 (function (CombatPong) {
-    var GameHostingInterface = (function () {
-        function GameHostingInterface(stageData) {
+    var GameObject = (function () {
+        function GameObject(stageData) {
             this.stageData = stageData;
-            this.displayButtons();
-            this.gameHostingManager = new CombatPong.GameHostingManager(this.stageData, this.updateGameListing);
-            //if (stageData.isNetEnabled)
-            //	this.displayButtons();
+            this.graphic = new Kinetic.Group({});
+            this.spawn();
+            this.stageData.foreground.add(this.graphic);
+            this.interactiveGraphic = new CombatPong.InteractiveGraphic(this.stageData, this.graphic);
         }
-        GameHostingInterface.prototype.updateGameListing = function (peerIDS) {
-            alert("ARRG");
+        GameObject.prototype.spawn = function () {
         };
-        GameHostingInterface.prototype.displayButtons = function () {
-            this.clearInterface();
-            if (this.stageData.isNetEnabled == false) {
-                this.displayCouldNotContactServer();
-                return;
-            }
+        GameObject.prototype.triggerAnotherObjectsCollision = function (receiver, response) {
+            var i = 4;
+        };
 
-            this.displayJoinableGame("Game 1");
-            this.displayJoinableGame("Game 2");
-            this.displayHostOption();
+        GameObject.prototype.tick = function () {
         };
-        GameHostingInterface.prototype.displayJoinableGame = function (gameTitle) {
-            var t = document.createTextNode(gameTitle + "-----");
-            Util.Interface.d.appendChild(t);
-            var b = Util.Interface.addStandardButton("Join");
-            Util.Interface.d.appendChild(document.createElement("br"));
+        GameObject.prototype.checkForCollision = function (otherGameObject) {
+            return this.interactiveGraphic.SATcollisionTest(otherGameObject.interactiveGraphic);
         };
-        GameHostingInterface.prototype.displayHostOption = function () {
-            Util.Interface.addStandardButton("Host Game");
+        GameObject.prototype.retreiveCollisionData = function () {
+            return this.interactiveGraphic.satResponse;
         };
-        GameHostingInterface.prototype.clearInterface = function () {
-            Util.Interface.clearInterface();
+        GameObject.prototype.checkForRoughCollision = function (otherGameObject) {
+            return this.interactiveGraphic.roughCollisionTest(otherGameObject.interactiveGraphic);
         };
-        GameHostingInterface.prototype.displayCouldNotContactServer = function () {
-            this.clearInterface();
-            var t = document.createTextNode("Could not connect to lobby");
-            Util.Interface.d.appendChild(t);
+        GameObject.prototype.onWallCollision = function (wall, response) {
         };
-        return GameHostingInterface;
+        GameObject.prototype.onBallCollision = function (ball, response) {
+        };
+        return GameObject;
     })();
-    CombatPong.GameHostingInterface = GameHostingInterface;
-    ;
-})(CombatPong || (CombatPong = {}));
-/// <reference path="../socket.io-client.d.ts" />
-var CombatPong;
-(function (CombatPong) {
-    var GameHostingManager = (function () {
-        function GameHostingManager(stageData, updateGameListingCallback) {
-            this.isConnected = false;
-            this.stageData = stageData;
-            this.updateGameListingCallback = updateGameListingCallback;
-            this.connectToGameHostingServer();
-        }
-        GameHostingManager.prototype.connectToGameHostingServer = function () {
-            var socket = io.connect('http://localhost:23156');
-            socket.on('news', function (data) {
-                console.log(data);
-                socket.emit('my other event', { my: 'data' });
-            });
-            socket.emit('my other event', { my: 'data' });
-            //socket.on('GameListing', this.getGameListing);
-        };
-        GameHostingManager.prototype.getGameListing = function (data) {
-            var peerIDS = [];
-            this.updateGameListingCallback(peerIDS);
-        };
-        return GameHostingManager;
-    })();
-    CombatPong.GameHostingManager = GameHostingManager;
+    CombatPong.GameObject = GameObject;
 })(CombatPong || (CombatPong = {}));
 var CombatPong;
 (function (CombatPong) {
@@ -481,6 +247,398 @@ var CombatPong;
     })();
     CombatPong.InteractiveGraphic = InteractiveGraphic;
     ;
+})(CombatPong || (CombatPong = {}));
+/// <reference path="collision/gameobject.ts" />
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+var CombatPong;
+(function (CombatPong) {
+    var Ball = (function (_super) {
+        __extends(Ball, _super);
+        function Ball(stageData, x, y, radius) {
+            _super.call(this, stageData);
+            this.spawnWithParamaters(x, y, radius);
+        }
+        Ball.prototype.spawnWithParamaters = function (x, y, radius) {
+            this.circle = new Kinetic.Circle({ x: x, y: y, radius: radius });
+            this.circle.fill(Ball.defaultBallColor);
+            this.graphic.add(this.circle);
+        };
+
+        Ball.prototype.onWallCollision = function (wall, response) {
+            this.circle.fill("Red");
+        };
+        Ball.prototype.triggerAnotherObjectsCollision = function (otherGameObject, response) {
+            otherGameObject.onBallCollision(this, this.retreiveCollisionData());
+        };
+        Ball.prototype.tick = function () {
+        };
+        Ball.defaultBallColor = "Black";
+        return Ball;
+    })(CombatPong.GameObject);
+    CombatPong.Ball = Ball;
+})(CombatPong || (CombatPong = {}));
+var CombatPong;
+(function (CombatPong) {
+    var Game = (function () {
+        function Game(stageData) {
+            this.logicFrameLengthInMS = 1 / 50 * 1000;
+            this.tickNumber = 0;
+            this.expectedTickNumber = 0;
+            this.stageData = stageData;
+            this.world = new CombatPong.World(stageData);
+            this.peerMan = new CombatPong.PeerMan();
+            this.gameHostingInterface = new CombatPong.GameHostingInterface(stageData);
+        }
+        Game.prototype.tick = function () {
+            this.regulatedTick();
+        };
+
+        Game.prototype.regulatedTick = function () {
+            this.expectedTickNumber = this.peerMan.timeSinceStartMS() / this.logicFrameLengthInMS;
+            while (this.expectedTickNumber > this.tickNumber) {
+                if (this.isNetworkTick(this.tickNumber))
+                    this.peerMan.tick();
+                this.world.tick();
+                this.tickNumber++;
+            }
+        };
+        Game.prototype.isNetworkTick = function (tickNo) {
+            if (this.stageData.isNetEnabled == false)
+                return false;
+            var prevTickTime = this.logicFrameLengthInMS * (tickNo - 1);
+            var tickTime = this.logicFrameLengthInMS * tickNo;
+            var networkTickForPrevTickTime = Math.floor(prevTickTime / CombatPong.PeerMan.defaultNetworkFrameLengthInMS);
+            var networkTickForCurrentTickTime = Math.floor(tickTime / CombatPong.PeerMan.defaultNetworkFrameLengthInMS);
+            if (networkTickForCurrentTickTime > networkTickForPrevTickTime)
+                return true;
+            return false;
+        };
+        return Game;
+    })();
+    CombatPong.Game = Game;
+    ;
+    var Timer = (function () {
+        function Timer() {
+        }
+        return Timer;
+    })();
+    CombatPong.Timer = Timer;
+    ;
+})(CombatPong || (CombatPong = {}));
+var CombatPong;
+(function (CombatPong) {
+    var Wall = (function (_super) {
+        __extends(Wall, _super);
+        function Wall(stageData, x, y, width, height) {
+            _super.call(this, stageData);
+            this.spawnWithParams(x, y, width, height);
+        }
+        Wall.prototype.spawnWithParams = function (x, y, width, height) {
+            this.rect = Util.Graphics.genRectLines(0, 0, width, height);
+            this.rect.x(x);
+            this.rect.y(y);
+            this.rect.fill(Wall.defaultWallColor);
+            this.graphic.add(this.rect);
+        };
+        Wall.prototype.onBallCollision = function (ball, response) {
+        };
+        Wall.prototype.triggerAnotherObjectsCollision = function (otherGameObject, response) {
+            otherGameObject.onWallCollision(this, this.retreiveCollisionData());
+        };
+        Wall.defaultWallColor = "Black";
+        return Wall;
+    })(CombatPong.GameObject);
+    CombatPong.Wall = Wall;
+})(CombatPong || (CombatPong = {}));
+var Util;
+(function (Util) {
+    var Conf = (function () {
+        function Conf() {
+        }
+        Conf.hostURL = "http://localhost:23156";
+        Conf.peerPort = 9000;
+        Conf.socketPort = 23156;
+        Conf.forceDisableNet = false;
+        Conf.forceEnableNet = false;
+        return Conf;
+    })();
+    Util.Conf = Conf;
+    var Math = (function () {
+        function Math() {
+        }
+        Math.isNumberWithinBounds = function (num, leftBound, rightBound) {
+            if (num >= leftBound && num <= rightBound)
+                return true;
+            return false;
+        };
+        return Math;
+    })();
+    Util.Math = Math;
+    ;
+    var Graphics = (function () {
+        function Graphics() {
+        }
+        Graphics.copyAndFlipResponse = function (response) {
+            var flippedResponse = new SAT.Response();
+            flippedResponse.overlapV = response.overlapV.reverse();
+            flippedResponse.overlapN = response.overlapN.reverse();
+            flippedResponse.overlap = response.overlap;
+            return flippedResponse;
+        };
+        Graphics.isCircle = function (obj) {
+            var type = obj.getClassName();
+            if (type == "Circle")
+                return true;
+            return false;
+        };
+        Graphics.isPolygon = function (obj) {
+            var type = obj.getClassName();
+            if (type == "Line")
+                return true;
+            return false;
+        };
+        Graphics.genRectLines = function (x, y, width, height) {
+            var line = new Kinetic.Line({});
+
+            //line.x(x);
+            //line.y(y);
+            var points = [];
+            points.push(x, y);
+            points.push(x + width, y + 0);
+            points.push(x + width, y + height);
+            points.push(x + 0, y + height);
+
+            line.setPoints(points);
+            line.closed(true);
+            return line;
+        };
+        return Graphics;
+    })();
+    Util.Graphics = Graphics;
+    ;
+    var Interface = (function () {
+        function Interface() {
+        }
+        Interface.addStandardButton = function (buttonText) {
+            var b = document.createElement("BUTTON");
+            var t = document.createTextNode(buttonText);
+            b.appendChild(t);
+            b.style.margin = "0px";
+            b.style.padding = "0px";
+            b.style.zIndex = "100";
+            b.style.top = "auto";
+            b.style.left = "10px";
+            Interface.d.appendChild(b);
+            return b;
+        };
+        Interface.clearInterface = function () {
+            while (Interface.d.firstChild)
+                Interface.d.removeChild(Interface.d.firstChild);
+        };
+        Interface.d = document.createElement("div");
+        return Interface;
+    })();
+    Util.Interface = Interface;
+    ;
+
+    //here we create the absolute Div that way we can draw things on top of the canvas
+    Interface.d.style.position = "absolute";
+    Interface.d.style.top = "10px";
+    Interface.d.style.margin = "0px";
+    document.body.appendChild(Interface.d);
+})(Util || (Util = {}));
+/// <reference path="../utilityfunctions.ts" />
+var CombatPong;
+(function (CombatPong) {
+    var GameHostingInterface = (function () {
+        function GameHostingInterface(stageData) {
+            this.stageData = stageData;
+            this.displayButtons();
+            this.gameHostingManager = new CombatPong.GameHostingManager(this.stageData, this.updateGameListing);
+            //if (stageData.isNetEnabled)
+            //	this.displayButtons();
+        }
+        GameHostingInterface.prototype.updateGameListing = function (peerIDS) {
+            alert("ARRG");
+        };
+        GameHostingInterface.prototype.displayButtons = function () {
+            this.clearInterface();
+            if (this.stageData.isNetEnabled == false) {
+                this.displayCouldNotContactServer();
+                return;
+            }
+
+            this.displayJoinableGame("Game 1");
+            this.displayJoinableGame("Game 2");
+            this.displayHostOption();
+        };
+        GameHostingInterface.prototype.displayJoinableGame = function (gameTitle) {
+            var t = document.createTextNode(gameTitle + "-----");
+            Util.Interface.d.appendChild(t);
+            var b = Util.Interface.addStandardButton("Join");
+            Util.Interface.d.appendChild(document.createElement("br"));
+        };
+        GameHostingInterface.prototype.displayHostOption = function () {
+            Util.Interface.addStandardButton("Host Game");
+        };
+        GameHostingInterface.prototype.clearInterface = function () {
+            Util.Interface.clearInterface();
+        };
+        GameHostingInterface.prototype.displayCouldNotContactServer = function () {
+            this.clearInterface();
+            var t = document.createTextNode("Could not connect to lobby");
+            Util.Interface.d.appendChild(t);
+        };
+        return GameHostingInterface;
+    })();
+    CombatPong.GameHostingInterface = GameHostingInterface;
+    ;
+})(CombatPong || (CombatPong = {}));
+/// <reference path="../../socket.io-client.d.ts" />
+var CombatPong;
+(function (CombatPong) {
+    var GameHostingManager = (function () {
+        function GameHostingManager(stageData, updateGameListingCallback) {
+            this.isConnected = false;
+            this.stageData = stageData;
+            this.updateGameListingCallback = updateGameListingCallback;
+            this.connectToGameHostingServer();
+        }
+        GameHostingManager.prototype.connectToGameHostingServer = function () {
+            var socket = io.connect(Util.Conf.hostURL);
+            socket.on('news', function (data) {
+                console.log(data);
+                socket.emit('my other event', { my: 'data' });
+            });
+            socket.emit('my other event', { my: 'data' });
+            //socket.on('GameListing', this.getGameListing);
+        };
+        GameHostingManager.prototype.getGameListing = function (data) {
+            var peerIDS = [];
+            this.updateGameListingCallback(peerIDS);
+        };
+        return GameHostingManager;
+    })();
+    CombatPong.GameHostingManager = GameHostingManager;
+})(CombatPong || (CombatPong = {}));
+var CombatPong;
+(function (CombatPong) {
+    var StageData = (function () {
+        function StageData(stage, baseWidth, baseHeight) {
+            this.isNetEnabled = true;
+            this.findNetworkSettings();
+
+            this.stage = stage;
+
+            this.UI = new Kinetic.Layer();
+            this.stage.add(this.UI);
+
+            this.foreground = new Kinetic.Layer();
+            this.stage.add(this.foreground);
+
+            this.background = new Kinetic.Layer();
+            this.stage.add(this.background);
+
+            this.baseWidth = baseWidth;
+            this.baseHeight = baseHeight;
+
+            this.peerMan = new CombatPong.PeerMan();
+        }
+        StageData.prototype.findNetworkSettings = function () {
+            if (navigator.appName === "Netscape")
+                this.isNetEnabled = true;
+            if (navigator.appName === "Microsoft Internet Explorer")
+                this.isNetEnabled = false;
+            if (navigator.appName === "Safari")
+                this.isNetEnabled = false;
+
+            if (Util.Conf.forceEnableNet == true)
+                this.isNetEnabled = true;
+            if (Util.Conf.forceDisableNet == true)
+                this.isNetEnabled = false;
+        };
+        return StageData;
+    })();
+    CombatPong.StageData = StageData;
+    ;
+})(CombatPong || (CombatPong = {}));
+/// <reference path="stagedata.ts" />
+/// <reference path="../game/game.ts" />
+var CombatPong;
+(function (CombatPong) {
+    var Screen = (function () {
+        function Screen(width, height, divID) {
+            var _this = this;
+            this.tick = function (timestamp) {
+                _this.stage.draw();
+                _this.game.tick();
+                requestAnimationFrame(_this.tick);
+            };
+            // If I don't have this there is occasionally a scrollbar on fullscreen, this is just light padding to prevent that from happening
+            this.percentage = .99;
+            this.stage = new Kinetic.Stage({ width: width, height: height, container: divID });
+            this.baseHeight = height;
+            this.baseWidth = width;
+
+            this.stageData = new CombatPong.StageData(this.stage, this.baseWidth, this.baseHeight);
+            this.attachBorder();
+
+            this.game = new CombatPong.Game(this.stageData);
+
+            requestAnimationFrame(this.tick);
+        }
+        Screen.prototype.attachBorder = function () {
+            this.rect = new Kinetic.Rect({});
+            this.rect.x(0);
+            this.rect.y(0);
+            this.rect.width(this.baseWidth);
+            this.rect.height(this.baseHeight);
+            this.rect.stroke("Black");
+            this.rect.strokeWidth(3.5);
+            this.stageData.UI.add(this.rect);
+        };
+
+        Screen.prototype.limitStageByWidth = function (elementWidth, elementHeight) {
+            var scale = elementWidth / this.baseWidth;
+            this.stageData.stage.scaleX(scale);
+            this.stageData.stage.scaleY(scale);
+
+            this.stageData.stage.setWidth(elementWidth);
+            this.stageData.stage.setHeight(elementWidth * (this.baseHeight / this.baseWidth));
+
+            if (this.stageData.stage.height() > elementHeight)
+                return false;
+            return true;
+        };
+        Screen.prototype.limitStageByHeight = function (elementWidth, elementHeight) {
+            var scale = elementHeight / this.baseHeight;
+            this.stageData.stage.scaleX(scale);
+            this.stageData.stage.scaleY(scale);
+
+            this.stageData.stage.setWidth(elementHeight * (this.baseWidth / this.baseHeight));
+            this.stageData.stage.setHeight(elementHeight);
+
+            if (this.stageData.stage.width() > elementHeight)
+                return false;
+            return true;
+        };
+        Screen.prototype.fitStageToScreen = function () {
+            var elem = document.getElementById('content');
+
+            var elementWidth = window.innerWidth * this.percentage;
+            var elementHeight = window.innerHeight * this.percentage;
+            if (!this.limitStageByWidth(elementWidth, elementHeight)) {
+                this.limitStageByHeight(elementWidth, elementHeight);
+            }
+        };
+        return Screen;
+    })();
+    CombatPong.Screen = Screen;
 })(CombatPong || (CombatPong = {}));
 var MWG;
 (function (MWG) {
@@ -594,155 +752,30 @@ var CombatPong;
     CombatPong.PeerManClient = PeerManClient;
     ;
 })(CombatPong || (CombatPong = {}));
+/// <reference path="src/game/collision/collisionmanager.ts" />
+/// <reference path="src/game/world.ts" />
+/// <reference path="src/game/collision/gameobject.ts" />
+/// <reference path="src/game/collision/interactivegraphic.ts" />
+/// <reference path="src/game/ball.ts" />
+/// <reference path="src/game/game.ts" />
+/// <reference path="src/game/wall.ts" />
+/// <reference path="src/matchmaking/gamehostinginterface.ts" />
+/// <reference path="src/matchmaking/gamehostingmanager.ts" />
+/// <reference path="src/meta/screen.ts" />
+/// <reference path="src/meta/stagedata.ts" />
+/// <reference path="src/keyman.ts" />
+/// <reference path="src/peerman.ts" />
+/// <reference path="src/utilityfunctions.ts" />
 var CombatPong;
 (function (CombatPong) {
-    var Screen = (function () {
-        function Screen(width, height, divID) {
-            var _this = this;
-            this.tick = function (timestamp) {
-                _this.stage.draw();
-                _this.game.tick();
-                requestAnimationFrame(_this.tick);
-            };
-            // If I don't have this there is occasionally a scrollbar on fullscreen, this is just light padding to prevent that from happening
-            this.percentage = .99;
-            this.stage = new Kinetic.Stage({ width: width, height: height, container: divID });
-            this.baseHeight = height;
-            this.baseWidth = width;
-
-            this.stageData = new CombatPong.StageData(this.stage, this.baseWidth, this.baseHeight);
-            this.attachBorder();
-
-            this.game = new CombatPong.Game(this.stageData);
-
-            requestAnimationFrame(this.tick);
-        }
-        Screen.prototype.attachBorder = function () {
-            this.rect = new Kinetic.Rect({});
-            this.rect.x(0);
-            this.rect.y(0);
-            this.rect.width(this.baseWidth);
-            this.rect.height(this.baseHeight);
-            this.rect.stroke("Black");
-            this.rect.strokeWidth(3.5);
-            this.stageData.UI.add(this.rect);
-        };
-
-        Screen.prototype.limitStageByWidth = function (elementWidth, elementHeight) {
-            var scale = elementWidth / this.baseWidth;
-            this.stageData.stage.scaleX(scale);
-            this.stageData.stage.scaleY(scale);
-
-            this.stageData.stage.setWidth(elementWidth);
-            this.stageData.stage.setHeight(elementWidth * (this.baseHeight / this.baseWidth));
-
-            if (this.stageData.stage.height() > elementHeight)
-                return false;
-            return true;
-        };
-        Screen.prototype.limitStageByHeight = function (elementWidth, elementHeight) {
-            var scale = elementHeight / this.baseHeight;
-            this.stageData.stage.scaleX(scale);
-            this.stageData.stage.scaleY(scale);
-
-            this.stageData.stage.setWidth(elementHeight * (this.baseWidth / this.baseHeight));
-            this.stageData.stage.setHeight(elementHeight);
-
-            if (this.stageData.stage.width() > elementHeight)
-                return false;
-            return true;
-        };
-        Screen.prototype.fitStageToScreen = function () {
-            var elem = document.getElementById('content');
-
-            var elementWidth = window.innerWidth * this.percentage;
-            var elementHeight = window.innerHeight * this.percentage;
-            if (!this.limitStageByWidth(elementWidth, elementHeight)) {
-                this.limitStageByHeight(elementWidth, elementHeight);
-            }
-        };
-        return Screen;
-    })();
-    CombatPong.Screen = Screen;
-})(CombatPong || (CombatPong = {}));
-var CombatPong;
-(function (CombatPong) {
-    var StageData = (function () {
-        function StageData(stage, baseWidth, baseHeight) {
-            this.isNetEnabled = true;
-            this.stage = stage;
-
-            this.UI = new Kinetic.Layer();
-            this.stage.add(this.UI);
-
-            this.foreground = new Kinetic.Layer();
-            this.stage.add(this.foreground);
-
-            this.background = new Kinetic.Layer();
-            this.stage.add(this.background);
-
-            this.baseWidth = baseWidth;
-            this.baseHeight = baseHeight;
-
-            this.peerMan = new CombatPong.PeerMan();
-        }
-        return StageData;
-    })();
-    CombatPong.StageData = StageData;
-    ;
-})(CombatPong || (CombatPong = {}));
-var CombatPong;
-(function (CombatPong) {
-    var Wall = (function (_super) {
-        __extends(Wall, _super);
-        function Wall(stageData, x, y, width, height) {
-            _super.call(this, stageData);
-            this.spawnWithParams(x, y, width, height);
-        }
-        Wall.prototype.spawnWithParams = function (x, y, width, height) {
-            this.rect = Util.Graphics.genRectLines(0, 0, width, height);
-            this.rect.x(x);
-            this.rect.y(y);
-            this.rect.fill(Wall.defaultWallColor);
-            this.graphic.add(this.rect);
-        };
-        Wall.prototype.onBallCollision = function (ball, response) {
-        };
-        Wall.prototype.triggerAnotherObjectsCollision = function (otherGameObject, response) {
-            otherGameObject.onWallCollision(this, this.retreiveCollisionData());
-        };
-        Wall.defaultWallColor = "Black";
-        return Wall;
-    })(CombatPong.GameObject);
-    CombatPong.Wall = Wall;
-})(CombatPong || (CombatPong = {}));
-var CombatPong;
-(function (CombatPong) {
-    var World = (function () {
-        function World(stageData) {
-            this.stageData = stageData;
-            this.worldObjects = [];
-            this.createWalls();
-            this.collisionManager = new CombatPong.CollisionManager(this.stageData, this.worldObjects);
-        }
-        World.prototype.createWalls = function () {
-            var heightOfWalls = this.stageData.baseHeight / 20;
-            var widthOfWalls = this.stageData.baseWidth;
-            this.worldObjects.push(new CombatPong.Wall(this.stageData, 0, 0, widthOfWalls, heightOfWalls));
-
-            this.worldObjects.push(new CombatPong.Wall(this.stageData, 0, this.stageData.baseHeight - heightOfWalls, widthOfWalls, heightOfWalls));
-
-            this.worldObjects.push(new CombatPong.Ball(this.stageData, this.stageData.baseWidth / 2, this.stageData.baseHeight / 2, this.stageData.baseHeight / 50));
-        };
-        World.prototype.tick = function () {
-            for (var i = 0; i < this.worldObjects.length; ++i) {
-                this.worldObjects[i].tick();
-            }
-            this.collisionManager.updateCollisions();
-        };
-        return World;
-    })();
-    CombatPong.World = World;
-    ;
+    var screen;
+    window.onload = function () {
+        screen = new CombatPong.Screen(960, 540, 'content');
+        screen.fitStageToScreen();
+    };
+    window.onresize = function () {
+        if (screen)
+            screen.fitStageToScreen();
+    };
 })(CombatPong || (CombatPong = {}));
 //# sourceMappingURL=all.js.map
