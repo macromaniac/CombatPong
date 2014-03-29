@@ -1,7 +1,9 @@
-﻿/// <reference path="../../socket.io-client.d.ts" />
-
+﻿
 module CombatPong {
 	export class GameHostingManager {
+
+		public static gameListRefreshRateInMS: number = 3500;
+
 		private stageData: StageData;
 		private updateGameListingCallback: (peerIDS: string[]) => void;
 		constructor(stageData: StageData,
@@ -9,6 +11,7 @@ module CombatPong {
 			this.stageData = stageData;
 			this.updateGameListingCallback = updateGameListingCallback;
 			this.connectToGameHostingServer();
+
 		}
 
         private socket: Socket;
@@ -16,6 +19,7 @@ module CombatPong {
         public requestList = () =>  {
             this.socket.emit('Check If Hosting', {});
             this.socket.emit('Request GameList', {});
+			this.timeout = setTimeout(this.requestList, GameHostingManager.gameListRefreshRateInMS);
         }
 
 		public isConnected: boolean = false;
@@ -27,7 +31,7 @@ module CombatPong {
 
             this.socket.on('connect', ()=> {
                 this.isConnected = true;
-                this.timeout = setTimeout(this.requestList, 2000);
+                this.timeout = setTimeout(this.requestList, GameHostingManager.gameListRefreshRateInMS);
                 this.requestList();
             });
 
@@ -43,12 +47,17 @@ module CombatPong {
             this.socket.on('GameList', this.updateGameListingCallback);
 		}
 
+		public onHostingConnected() {
+			this.socket.emit('disconnect', {});
+		}
         public hostGame(gameID:string) {
             this.socket.emit('Host Game', gameID);
+			this.stageData.peerMan.beginHosting(this.onHostingConnected);
             this.amIHosting = true;
         }
         public stopHostingGame() {
             this.socket.emit('Stop Hosting Game', {});
+			this.stageData.peerMan.stopHosting();
             this.amIHosting = false;
         }
 

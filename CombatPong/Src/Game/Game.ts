@@ -8,7 +8,7 @@
 		private gameHostingInterface: GameHostingInterface;
 		constructor(stageData: StageData) {
 			this.stageData = stageData;
-			this.world = new World(stageData);
+			//this.world = new World(stageData);
 			this.peerMan = new PeerMan();
 			this.gameHostingInterface = new GameHostingInterface(stageData);
 
@@ -23,7 +23,8 @@
 			while (this.expectedTickNumber > this.tickNumber) {
 				if (this.isNetworkTick(this.tickNumber))
 					this.peerMan.tick();
-				this.world.tick();
+				if(this.world)
+					this.world.tick();
 				this.tickNumber++;
 			}
 		}

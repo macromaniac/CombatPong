@@ -83,9 +83,9 @@
             var max = this.maxX;
             var leftBound = otherGraphic.minX;
             var rightBound = otherGraphic.maxX;
-            if (Util.Math.isNumberWithinBounds(min, leftBound, rightBound))
+            if (Util.Algorithms.isNumberWithinBounds(min, leftBound, rightBound))
                 return true;
-            if (Util.Math.isNumberWithinBounds(max, leftBound, rightBound))
+            if (Util.Algorithms.isNumberWithinBounds(max, leftBound, rightBound))
                 return true;
             return false;
         }

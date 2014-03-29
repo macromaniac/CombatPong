@@ -1,10 +1,12 @@
-﻿/// <reference path="../utilityfunctions.ts" />
-
+﻿
 
 module CombatPong {
 	export class GameHostingInterface {
 		private stageData: StageData;
 		private gameHostingManager: GameHostingManager;
+
+		private peerIDS: string[];
+
 		constructor(stageData: StageData) {
 			this.stageData = stageData;
 			this.gameHostingManager =
@@ -14,6 +16,7 @@ module CombatPong {
 		}
 		private updateGameListing = (peerIDS:string[])=> {
             this.clearInterface();
+			this.peerIDS = peerIDS;
             Util.Interface.d.appendChild(document.createTextNode("Combat Pong"));
             Util.Interface.d.appendChild(document.createElement("br"));
 			if (this.stageData.isNetEnabled == false) {
@@ -39,11 +42,11 @@ module CombatPong {
             b.onclick = this.hostGame;
             if (this.gameHostingManager.isHosting()) {
                 Util.Interface.d.appendChild(document.createElement("br"));
-                Util.Interface.d.appendChild(document.createTextNode("You are currently hosting a game"));
+				Util.Interface.d.appendChild(document.createTextNode("You are currently hosting game " + this.peerIDS.indexOf(Util.Conf.uniqueID)));
             }
 		}
         private hostGame = () => {
-            this.gameHostingManager.hostGame("TEST");
+            this.gameHostingManager.hostGame(Util.Conf.uniqueID);
             this.gameHostingManager.requestList();
         }
 		private clearInterface() {

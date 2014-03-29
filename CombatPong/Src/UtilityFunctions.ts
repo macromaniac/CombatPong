@@ -5,15 +5,35 @@
 		public static socketPort: number = 23156;
 		public static forceDisableNet: boolean = false;
 		public static forceEnableNet: boolean = false;
+		public static uniqueID: string = "";
 	}
-	export class Math {
+
+
+	export class Algorithms {
 		public static isNumberWithinBounds(num: number, leftBound: number, rightBound: number): boolean {
 			if (num >= leftBound && num <= rightBound)
 				return true;
 			return false;
 		}
+		public static genID(): string {
+			// always start with a letter (for DOM friendlyness)
+			var idstr = String.fromCharCode(Math.floor((Math.random() * 25) + 65));
+			do {
+				// between numbers and characters (48 is 0 and 90 is Z (42-48 = 90)
+				var ascicode = Math.floor((Math.random() * 42) + 48);
+				if (ascicode < 58 || ascicode > 64) {
+					// exclude all chars between : (58) and @ (64)
+					idstr += String.fromCharCode(ascicode);
+				}
+			} while (idstr.length < 32);
 
+			return (idstr);
+		}
 	};
+
+	//generate a unique ID for the user at the start
+	Util.Conf.uniqueID = Algorithms.genID();
+
 	export class Graphics {
 		public static copyAndFlipResponse(response: SAT.Response): SAT.Response {
 			var flippedResponse: SAT.Response = new SAT.Response();
@@ -73,7 +93,8 @@
 	//here we create the absolute Div that way we can draw things on top of the canvas
 	Interface.d.style.position = "absolute";
 	Interface.d.style.top = "10px";
-	Interface.d.style.margin = "0px";
+	Interface.d.style.width = "100%";
+	Interface.d.style.margin = "0 auto";
 	document.body.appendChild(Interface.d);
 
 }

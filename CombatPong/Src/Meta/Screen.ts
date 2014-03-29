@@ -1,6 +1,4 @@
-﻿/// <reference path="stagedata.ts" />
-/// <reference path="../game/game.ts" />
-
+﻿
 
 module CombatPong {
 	export class Screen {

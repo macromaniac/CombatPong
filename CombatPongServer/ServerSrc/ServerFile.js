@@ -29,9 +29,11 @@ io.sockets.on('connection', function (socket) {
     socket.on('disconnect', StopHostingGame);
 
     function StopHostingGame(){
-        if (hostVal != "")
-            delElementFromGameList(hostVal);
-    }
+    	if (hostVal != "") {
+    		delElementFromGameList(hostVal);
+        	hostVal = "";
+        }
+	}
 });
 
 
@@ -50,3 +52,4 @@ server.on('connection', function (id) {
 server.on("disconnect", function (id) {
     console.log("Peer disconnected from server");
 });
+

@@ -1,5 +1,4 @@
-﻿/// <reference path="collision/gameobject.ts" />
-
+﻿
 module CombatPong {
     export class Ball extends GameObject {
         static defaultBallColor = "Black";

@@ -10,7 +10,6 @@
         public baseWidth: number;
         public baseHeight: number;
 
-
 		public peerMan: PeerMan;
 
 		private findNetworkSettings() {
