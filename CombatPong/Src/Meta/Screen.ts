@@ -27,7 +27,7 @@ module CombatPong {
 			this.game.tick();
 			requestAnimationFrame(this.tick);
 		}
-        private attachBorder() {
+        private attachBorder = () => {
 			this.rect = new Kinetic.Rect({});
 			this.rect.x(0); this.rect.y(0); this.rect.width(this.baseWidth); this.rect.height(this.baseHeight);
 			this.rect.stroke("Black");

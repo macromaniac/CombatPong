@@ -1,6 +1,6 @@
 ﻿module CombatPong {
 	export class Game {
-		logicFrameLengthInMS: number = 1 / 50 * 1000;
+		logicFrameLengthInMS: number = (1 / 48) * 1000;
 
 		private stageData: StageData;
 		private world: World;
@@ -14,14 +14,15 @@
 			this.gameHostingInterface = new GameHostingInterface(stageData);
 
 		}
-		public tick() {
+		public tick = () => {
 			if (this.peerMan.timeSinceStartMS() > 0)
 				this.regulatedTick();
 		}
 		tickNumber: number = 0;
 		expectedTickNumber: number = 0;
-		private regulatedTick() {
+		private regulatedTick = () => {
 			this.expectedTickNumber = this.peerMan.timeSinceStartMS() / this.logicFrameLengthInMS;
+
 			while (this.expectedTickNumber > this.tickNumber) {
 				if (this.isNetworkTick(this.tickNumber))
 					this.peerMan.tick();
@@ -30,8 +31,8 @@
 				this.tickNumber++;
 			}
 		}
-		private isNetworkTick(tickNo: number): boolean {
-			if (this.stageData.isNetEnabled == false)
+		private isNetworkTick = (tickNo: number): boolean => {
+			if (this.stageData.isNetEnabled == false || tickNo==0)
 				return false;
 			var prevTickTime: number = this.logicFrameLengthInMS * (tickNo - 1);
 			var tickTime: number = this.logicFrameLengthInMS * tickNo;
@@ -43,11 +44,14 @@
 				return true;
 			return false;
 		}
-		public beginGameAsHost() {
-			alert('BEGAN HOST');
+		public beginGameAsHost = () => {
+			this.gameHostingInterface.stopMM();
 		}
-		public beginGameAsClient() {
-			alert('BEGAN CLIENT');
+		public beginGameAsClient = () => {
+			this.gameHostingInterface.stopMM();
+
+			//this.stageData.executeNetAction(new NetAction(gameobjectid, 
+			//executeNetAction(function
 		}
 	};
 }

@@ -33,6 +33,7 @@
     <TypeScriptCompile Include="Src\app.ts" />
     <TypeScriptCompile Include="jquery.d.ts" />
     <TypeScriptCompile Include="kinetic.d.ts" />
+    <TypeScriptCompile Include="Src\FrameData.ts" />
     <TypeScriptCompile Include="Src\Game\Ball.ts" />
     <TypeScriptCompile Include="Src\Game\Collision\CollisionManager.ts" />
     <TypeScriptCompile Include="Src\Game\Game.ts" />
@@ -45,6 +46,7 @@
     <TypeScriptCompile Include="Src\Meta\Screen.ts" />
     <TypeScriptCompile Include="socket.io-client.d.ts" />
     <TypeScriptCompile Include="Src\Meta\StageData.ts" />
+    <TypeScriptCompile Include="Src\Player.ts" />
     <TypeScriptCompile Include="Src\UtilityFunctions.ts" />
     <TypeScriptCompile Include="Src\Game\Wall.ts" />
     <TypeScriptCompile Include="Src\Game\World.ts" />

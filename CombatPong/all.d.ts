@@ -3,12 +3,12 @@
         private stageData;
         private gameObjects;
         constructor(stageData: StageData, gameObjects: GameObject[]);
-        public updateCollisions(): void;
-        private updateObjectMappings();
-        private sortGameObjectsByMinX();
-        private updateCollisionFromIndex(index);
-        private doTheseIndecesRoughlyCollide(indexA, indexB);
-        private doTheseIndecesCollide(indexA, indexB);
+        public updateCollisions: () => void;
+        private updateObjectMappings;
+        private sortGameObjectsByMinX;
+        private updateCollisionFromIndex;
+        private doTheseIndecesRoughlyCollide;
+        private doTheseIndecesCollide;
     }
 }
 declare module CombatPong {
@@ -64,13 +64,13 @@ declare module CombatPong {
         private peerMan;
         private gameHostingInterface;
         constructor(stageData: StageData);
-        public tick(): void;
+        public tick: () => void;
         public tickNumber: number;
         public expectedTickNumber: number;
-        private regulatedTick();
-        private isNetworkTick(tickNo);
-        public beginGameAsHost(): void;
-        public beginGameAsClient(): void;
+        private regulatedTick;
+        private isNetworkTick;
+        public beginGameAsHost: () => void;
+        public beginGameAsClient: () => void;
     }
 }
 declare module CombatPong {
@@ -100,12 +100,13 @@ declare module CombatPong {
         private peerIDS;
         constructor(stageData: StageData);
         private updateGameListing;
-        private displayJoinableGame(gameTitle, gameID);
-        private displayHostOption();
+        private displayJoinableGame;
+        private displayHostOption;
         private onHostButtonClicked;
-        private clearInterface();
+        private clearInterface;
         private onJoinButtonClicked(peerIDToJoin);
         private displayCouldNotContactServer();
+        public stopMM(): void;
     }
 }
 declare module CombatPong {
@@ -119,13 +120,14 @@ declare module CombatPong {
         public isConnected: boolean;
         private timeout;
         private amITryingToHost;
-        public connectToGameHostingServer(): void;
-        public onHostingConnected(): void;
-        public onJoiningConnected(): void;
-        private removeMM();
-        public hostGame(gameID: string): void;
-        public stopHostingGame(): void;
-        public isHosting(): boolean;
+        public connectToGameHostingServer: () => void;
+        public disconnectFromGameHostingServer: () => void;
+        public onHostingConnected: () => void;
+        public onJoiningConnected: () => void;
+        private removeMM;
+        public hostGame: (gameID: string) => void;
+        public stopHostingGame: () => void;
+        public isHosting: () => boolean;
     }
 }
 declare module CombatPong {
@@ -138,7 +140,7 @@ declare module CombatPong {
         public game: Game;
         constructor(width: number, height: number, divID: string);
         private tick;
-        private attachBorder();
+        private attachBorder;
         private percentage;
         private limitStageByWidth(elementWidth, elementHeight);
         private limitStageByHeight(elementWidth, elementHeight);
@@ -218,16 +220,18 @@ declare module CombatPong {
     }
     class PeerMan {
         static defaultNetworkFrameLengthInMS: number;
+        static networkPaddingFrameNumber: number;
         public hostingState: HostingState;
         public timeStart: number;
         private peer;
-        private generatePeer();
+        private generatePeer;
         constructor();
-        public tick(): void;
-        public beginJoining(onJoinConnection: () => any, idToJoin: string): void;
-        public beginHosting(onHostingConnection: () => any): void;
-        private zeroOutTheTime();
-        public timeSinceStartMS(): number;
+        public networkTickCount: number;
+        public tick: () => void;
+        public beginJoining: (onJoinConnection: () => any, idToJoin: string) => void;
+        public beginHosting: (onHostingConnection: () => any) => void;
+        private zeroOutTheTime;
+        public timeSinceStartMS: () => number;
     }
 }
 declare module Util {
@@ -256,4 +260,16 @@ declare module Util {
     }
 }
 declare module CombatPong {
+}
+declare module CombatPong {
+    class FrameData {
+        public player1: Player;
+        public player2: Player;
+        public stageData: StageData;
+        constructor(stageData: StageData);
+    }
+}
+declare module CombatPong {
+    class Player {
+    }
 }

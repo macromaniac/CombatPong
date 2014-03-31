@@ -7,71 +7,75 @@ module CombatPong {
 		private stageData: StageData;
 		private updateGameListingCallback: (peerIDS: string[]) => void;
 		constructor(stageData: StageData,
-				updateGameListingCallback: (peerIDS:string[]) => void) {
+			updateGameListingCallback: (peerIDS: string[]) => void) {
 			this.stageData = stageData;
 			this.updateGameListingCallback = updateGameListingCallback;
 			this.connectToGameHostingServer();
 
 		}
 
-        private socket: Socket;
+		private socket: Socket;
 
-        public requestList = () =>  {
-            this.socket.emit('Check If Hosting', {});
-            this.socket.emit('Request GameList', {});
+        public requestList = () => {
+			this.socket.emit('Check If Hosting', {});
+			this.socket.emit('Request GameList', {});
 			this.timeout = setTimeout(this.requestList, GameHostingManager.gameListRefreshRateInMS);
-        }
+		}
 
 		public isConnected: boolean = false;
-        private timeout: number;
-        private amITryingToHost: boolean = false;
+		private timeout: number;
+		private amITryingToHost: boolean = false;
 
-		public connectToGameHostingServer() {
+		public connectToGameHostingServer = () => {
 			this.socket = io.connect(Util.Conf.hostURL);
 
-            this.socket.on('connect', ()=> {
-                this.isConnected = true;
-                clearTimeout(this.timeout);
-                this.requestList();
+			this.socket.on('connect', () => {
+				this.isConnected = true;
+				clearTimeout(this.timeout);
+				this.requestList();
+			});
+
+			this.socket.on('disconnect', () => {
+				this.isConnected = false;
+				clearTimeout(this.timeout);
+			});
+
+			this.socket.on('Update Hosting Info', (data) => {
+				this.amITryingToHost = data.amIHosting
             });
 
-            this.socket.on('disconnect', () =>{
-                this.isConnected = false;
-                clearTimeout(this.timeout);
-            });
-
-            this.socket.on('Update Hosting Info', (data) => {
-                this.amITryingToHost = data.amIHosting
-            });
-
-            this.socket.on('GameList', this.updateGameListingCallback);
+			this.socket.on('GameList', this.updateGameListingCallback);
 		}
 
-		public onHostingConnected() {
-			this.stageData.game.beginGameAsClient();
-			this.removeMM();
+		public disconnectFromGameHostingServer = () => {
+			this.socket.disconnect();
 		}
-		public onJoiningConnected() {
-			this.stageData.game.beginGameAsHost();
-			this.removeMM();
+
+		public onHostingConnected = () => {
+				this.stageData.game.beginGameAsClient();
+				this.removeMM();
 		}
-		private removeMM() {
+		public onJoiningConnected = ()=> {
+				this.stageData.game.beginGameAsHost();
+				this.removeMM();
+		}
+		private removeMM = ()=> {
 			this.socket.emit('disconnect', {});
 			Util.Interface.clearInterface();
 			//SHOULD I REMOVE REFERENCES SO THIS CAN BE GARBAGE COLLECTED? IDTS
 		}
 
-        public hostGame(gameID:string) {
+        public hostGame = (gameID:string) => {
             this.socket.emit('Host Game', gameID);
 			this.stageData.peerMan.beginHosting(this.onHostingConnected);
             this.amITryingToHost = true;
         }
-        public stopHostingGame() {
+        public stopHostingGame = () => {
             this.socket.emit('Stop Hosting Game', {});
             this.amITryingToHost = false;
         }
 
-        public isHosting():boolean {
+        public isHosting = (): boolean => {
             return this.amITryingToHost;
         }
 

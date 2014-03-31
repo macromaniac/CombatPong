@@ -28,7 +28,7 @@ module CombatPong {
             }
 			this.displayHostOption();
 		}
-		private displayJoinableGame(gameTitle:string, gameID:string) {
+		private displayJoinableGame = (gameTitle: string, gameID: string) => {
 			var t: Text = document.createTextNode(gameTitle + "-----");
 			Util.Interface.d.appendChild(t);
 			var b: HTMLElement = Util.Interface.addStandardButton("Join");
@@ -37,7 +37,7 @@ module CombatPong {
             }
 			Util.Interface.d.appendChild(document.createElement("br"));
 		}
-		private displayHostOption() {
+		private displayHostOption = () => {
 			var b:HTMLElement = Util.Interface.addStandardButton("Host Game");
             b.onclick = this.onHostButtonClicked;
             if (this.gameHostingManager.isHosting()) {
@@ -49,7 +49,7 @@ module CombatPong {
             this.gameHostingManager.hostGame(Util.Conf.uniqueID);
             this.gameHostingManager.requestList();
         }
-		private clearInterface() {
+		private clearInterface = () => {
 			Util.Interface.clearInterface();
 		}
         private onJoinButtonClicked(peerIDToJoin: string) {
@@ -64,6 +64,10 @@ module CombatPong {
 			this.clearInterface();
 			var t: Text = document.createTextNode("Could not connect to lobby");
 			Util.Interface.d.appendChild(t);
+		}
+		public stopMM() {
+			this.clearInterface();
+			this.gameHostingManager.disconnectFromGameHostingServer();
 		}
 	};
 }

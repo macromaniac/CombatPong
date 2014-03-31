@@ -2,76 +2,75 @@
 (function (CombatPong) {
     var CollisionManager = (function () {
         function CollisionManager(stageData, gameObjects) {
+            var _this = this;
+            this.updateCollisions = function () {
+                _this.updateObjectMappings();
+                _this.sortGameObjectsByMinX();
+                for (var i = 0; i < _this.gameObjects.length; ++i) {
+                    _this.updateCollisionFromIndex(i);
+                }
+            };
+            this.updateObjectMappings = function () {
+                for (var i = 0; i < _this.gameObjects.length; ++i)
+                    _this.gameObjects[i].interactiveGraphic.mapPoints();
+            };
+            this.sortGameObjectsByMinX = function () {
+                //We use insertion here because the list is mostly sorted already (Should average o(n))
+                var j = 1;
+                for (var i = 1; i < _this.gameObjects.length; ++i) {
+                    j = i;
+                    while (j > 0 && _this.gameObjects[j - 1].interactiveGraphic.minX > _this.gameObjects[j].interactiveGraphic.minX) {
+                        var temp = _this.gameObjects[j - 1];
+                        _this.gameObjects[j - 1] = _this.gameObjects[j];
+                        _this.gameObjects[j] = temp;
+                        j--;
+                    }
+                }
+                var a = 0;
+            };
+            this.updateCollisionFromIndex = function (index) {
+                var center = index;
+
+                //Since the gameObjectsAre sorted by min X we can roughly collide them going to the right
+                //until they no longer roughly collied (when their min X is greater than our max X)
+                var rightBound = center;
+                while (_this.doTheseIndecesRoughlyCollide(center, rightBound + 1))
+                    rightBound++;
+                while (rightBound > center) {
+                    if (_this.doTheseIndecesCollide(center, rightBound)) {
+                        var a = _this.gameObjects[center];
+                        var b = _this.gameObjects[rightBound];
+
+                        var response = a.retreiveCollisionData();
+                        var flippedResponse = Util.Graphics.copyAndFlipResponse(response);
+
+                        a.triggerAnotherObjectsCollision(b, response);
+                        b.triggerAnotherObjectsCollision(a, flippedResponse);
+                    }
+                    rightBound--;
+                }
+            };
+            this.doTheseIndecesRoughlyCollide = function (indexA, indexB) {
+                if (indexA < 0 || indexA > _this.gameObjects.length - 1)
+                    return false;
+                if (indexB < 0 || indexB > _this.gameObjects.length - 1)
+                    return false;
+                return true;
+                var a = _this.gameObjects[indexA];
+                var b = _this.gameObjects[indexB];
+
+                return (a.checkForRoughCollision(b));
+            };
+            this.doTheseIndecesCollide = function (indexA, indexB) {
+                //We do not check for index  because we have checked in the rough collision test
+                var a = _this.gameObjects[indexA];
+                var b = _this.gameObjects[indexB];
+
+                return a.checkForCollision(b);
+            };
             this.stageData = stageData;
             this.gameObjects = gameObjects;
         }
-        CollisionManager.prototype.updateCollisions = function () {
-            this.updateObjectMappings();
-            this.sortGameObjectsByMinX();
-            for (var i = 0; i < this.gameObjects.length; ++i) {
-                this.updateCollisionFromIndex(i);
-            }
-        };
-
-        CollisionManager.prototype.updateObjectMappings = function () {
-            for (var i = 0; i < this.gameObjects.length; ++i)
-                this.gameObjects[i].interactiveGraphic.mapPoints();
-        };
-        CollisionManager.prototype.sortGameObjectsByMinX = function () {
-            //We use insertion here because the list is mostly sorted already (Should average o(n))
-            var j = 1;
-            for (var i = 1; i < this.gameObjects.length; ++i) {
-                j = i;
-                while (j > 0 && this.gameObjects[j - 1].interactiveGraphic.minX > this.gameObjects[j].interactiveGraphic.minX) {
-                    var temp = this.gameObjects[j - 1];
-                    this.gameObjects[j - 1] = this.gameObjects[j];
-                    this.gameObjects[j] = temp;
-                    j--;
-                }
-            }
-            var a = 0;
-        };
-        CollisionManager.prototype.updateCollisionFromIndex = function (index) {
-            var center = index;
-
-            //Since the gameObjectsAre sorted by min X we can roughly collide them going to the right
-            //until they no longer roughly collied (when their min X is greater than our max X)
-            var rightBound = center;
-            while (this.doTheseIndecesRoughlyCollide(center, rightBound + 1))
-                rightBound++;
-            while (rightBound > center) {
-                if (this.doTheseIndecesCollide(center, rightBound)) {
-                    var a = this.gameObjects[center];
-                    var b = this.gameObjects[rightBound];
-
-                    var response = a.retreiveCollisionData();
-                    var flippedResponse = Util.Graphics.copyAndFlipResponse(response);
-
-                    a.triggerAnotherObjectsCollision(b, response);
-                    b.triggerAnotherObjectsCollision(a, flippedResponse);
-                }
-                rightBound--;
-            }
-        };
-
-        CollisionManager.prototype.doTheseIndecesRoughlyCollide = function (indexA, indexB) {
-            if (indexA < 0 || indexA > this.gameObjects.length - 1)
-                return false;
-            if (indexB < 0 || indexB > this.gameObjects.length - 1)
-                return false;
-            return true;
-            var a = this.gameObjects[indexA];
-            var b = this.gameObjects[indexB];
-
-            return (a.checkForRoughCollision(b));
-        };
-        CollisionManager.prototype.doTheseIndecesCollide = function (indexA, indexB) {
-            //We do not check for index  because we have checked in the rough collision test
-            var a = this.gameObjects[indexA];
-            var b = this.gameObjects[indexB];
-
-            return a.checkForCollision(b);
-        };
         return CollisionManager;
     })();
     CombatPong.CollisionManager = CollisionManager;
@@ -256,9 +255,44 @@ var CombatPong;
 (function (CombatPong) {
     var Game = (function () {
         function Game(stageData) {
-            this.logicFrameLengthInMS = 1 / 50 * 1000;
+            var _this = this;
+            this.logicFrameLengthInMS = (1 / 48) * 1000;
+            this.tick = function () {
+                if (_this.peerMan.timeSinceStartMS() > 0)
+                    _this.regulatedTick();
+            };
             this.tickNumber = 0;
             this.expectedTickNumber = 0;
+            this.regulatedTick = function () {
+                _this.expectedTickNumber = _this.peerMan.timeSinceStartMS() / _this.logicFrameLengthInMS;
+
+                while (_this.expectedTickNumber > _this.tickNumber) {
+                    if (_this.isNetworkTick(_this.tickNumber))
+                        _this.peerMan.tick();
+                    if (_this.world)
+                        _this.world.tick();
+                    _this.tickNumber++;
+                }
+            };
+            this.isNetworkTick = function (tickNo) {
+                if (_this.stageData.isNetEnabled == false || tickNo == 0)
+                    return false;
+                var prevTickTime = _this.logicFrameLengthInMS * (tickNo - 1);
+                var tickTime = _this.logicFrameLengthInMS * tickNo;
+                var networkTickForPrevTickTime = Math.floor(prevTickTime / CombatPong.PeerMan.defaultNetworkFrameLengthInMS);
+                var networkTickForCurrentTickTime = Math.floor(tickTime / CombatPong.PeerMan.defaultNetworkFrameLengthInMS);
+                if (networkTickForCurrentTickTime > networkTickForPrevTickTime)
+                    return true;
+                return false;
+            };
+            this.beginGameAsHost = function () {
+                _this.gameHostingInterface.stopMM();
+            };
+            this.beginGameAsClient = function () {
+                _this.gameHostingInterface.stopMM();
+                //this.stageData.executeNetAction(new NetAction(gameobjectid,
+                //executeNetAction(function
+            };
             this.stageData = stageData;
             this.stageData.game = this;
 
@@ -266,38 +300,6 @@ var CombatPong;
             this.peerMan = this.stageData.peerMan;
             this.gameHostingInterface = new CombatPong.GameHostingInterface(stageData);
         }
-        Game.prototype.tick = function () {
-            if (this.peerMan.timeSinceStartMS() > 0)
-                this.regulatedTick();
-        };
-
-        Game.prototype.regulatedTick = function () {
-            this.expectedTickNumber = this.peerMan.timeSinceStartMS() / this.logicFrameLengthInMS;
-            while (this.expectedTickNumber > this.tickNumber) {
-                if (this.isNetworkTick(this.tickNumber))
-                    this.peerMan.tick();
-                if (this.world)
-                    this.world.tick();
-                this.tickNumber++;
-            }
-        };
-        Game.prototype.isNetworkTick = function (tickNo) {
-            if (this.stageData.isNetEnabled == false)
-                return false;
-            var prevTickTime = this.logicFrameLengthInMS * (tickNo - 1);
-            var tickTime = this.logicFrameLengthInMS * tickNo;
-            var networkTickForPrevTickTime = Math.floor(prevTickTime / CombatPong.PeerMan.defaultNetworkFrameLengthInMS);
-            var networkTickForCurrentTickTime = Math.floor(tickTime / CombatPong.PeerMan.defaultNetworkFrameLengthInMS);
-            if (networkTickForCurrentTickTime > networkTickForPrevTickTime)
-                return true;
-            return false;
-        };
-        Game.prototype.beginGameAsHost = function () {
-            alert('BEGAN HOST');
-        };
-        Game.prototype.beginGameAsClient = function () {
-            alert('BEGAN CLIENT');
-        };
         return Game;
     })();
     CombatPong.Game = Game;
@@ -376,37 +378,35 @@ var CombatPong;
                 }
                 _this.displayHostOption();
             };
+            this.displayJoinableGame = function (gameTitle, gameID) {
+                var t = document.createTextNode(gameTitle + "-----");
+                Util.Interface.d.appendChild(t);
+                var b = Util.Interface.addStandardButton("Join");
+                b.onclick = function () {
+                    _this.onJoinButtonClicked(gameID);
+                };
+                Util.Interface.d.appendChild(document.createElement("br"));
+            };
+            this.displayHostOption = function () {
+                var b = Util.Interface.addStandardButton("Host Game");
+                b.onclick = _this.onHostButtonClicked;
+                if (_this.gameHostingManager.isHosting()) {
+                    Util.Interface.d.appendChild(document.createElement("br"));
+                    Util.Interface.d.appendChild(document.createTextNode("You are currently hosting game " + _this.peerIDS.indexOf(Util.Conf.uniqueID)));
+                }
+            };
             this.onHostButtonClicked = function () {
                 _this.gameHostingManager.hostGame(Util.Conf.uniqueID);
                 _this.gameHostingManager.requestList();
+            };
+            this.clearInterface = function () {
+                Util.Interface.clearInterface();
             };
             this.stageData = stageData;
             this.gameHostingManager = new CombatPong.GameHostingManager(this.stageData, this.updateGameListing);
             //if (stageData.isNetEnabled)
             //	this.displayButtons();
         }
-        GameHostingInterface.prototype.displayJoinableGame = function (gameTitle, gameID) {
-            var _this = this;
-            var t = document.createTextNode(gameTitle + "-----");
-            Util.Interface.d.appendChild(t);
-            var b = Util.Interface.addStandardButton("Join");
-            b.onclick = function () {
-                _this.onJoinButtonClicked(gameID);
-            };
-            Util.Interface.d.appendChild(document.createElement("br"));
-        };
-        GameHostingInterface.prototype.displayHostOption = function () {
-            var b = Util.Interface.addStandardButton("Host Game");
-            b.onclick = this.onHostButtonClicked;
-            if (this.gameHostingManager.isHosting()) {
-                Util.Interface.d.appendChild(document.createElement("br"));
-                Util.Interface.d.appendChild(document.createTextNode("You are currently hosting game " + this.peerIDS.indexOf(Util.Conf.uniqueID)));
-            }
-        };
-
-        GameHostingInterface.prototype.clearInterface = function () {
-            Util.Interface.clearInterface();
-        };
         GameHostingInterface.prototype.onJoinButtonClicked = function (peerIDToJoin) {
             this.gameHostingManager.stopHostingGame();
             this.gameHostingManager.requestList();
@@ -418,6 +418,10 @@ var CombatPong;
             this.clearInterface();
             var t = document.createTextNode("Could not connect to lobby");
             Util.Interface.d.appendChild(t);
+        };
+        GameHostingInterface.prototype.stopMM = function () {
+            this.clearInterface();
+            this.gameHostingManager.disconnectFromGameHostingServer();
         };
         return GameHostingInterface;
     })();
@@ -436,59 +440,58 @@ var CombatPong;
             };
             this.isConnected = false;
             this.amITryingToHost = false;
+            this.connectToGameHostingServer = function () {
+                _this.socket = io.connect(Util.Conf.hostURL);
+
+                _this.socket.on('connect', function () {
+                    _this.isConnected = true;
+                    clearTimeout(_this.timeout);
+                    _this.requestList();
+                });
+
+                _this.socket.on('disconnect', function () {
+                    _this.isConnected = false;
+                    clearTimeout(_this.timeout);
+                });
+
+                _this.socket.on('Update Hosting Info', function (data) {
+                    _this.amITryingToHost = data.amIHosting;
+                });
+
+                _this.socket.on('GameList', _this.updateGameListingCallback);
+            };
+            this.disconnectFromGameHostingServer = function () {
+                _this.socket.disconnect();
+            };
+            this.onHostingConnected = function () {
+                _this.stageData.game.beginGameAsClient();
+                _this.removeMM();
+            };
+            this.onJoiningConnected = function () {
+                _this.stageData.game.beginGameAsHost();
+                _this.removeMM();
+            };
+            this.removeMM = function () {
+                _this.socket.emit('disconnect', {});
+                Util.Interface.clearInterface();
+                //SHOULD I REMOVE REFERENCES SO THIS CAN BE GARBAGE COLLECTED? IDTS
+            };
+            this.hostGame = function (gameID) {
+                _this.socket.emit('Host Game', gameID);
+                _this.stageData.peerMan.beginHosting(_this.onHostingConnected);
+                _this.amITryingToHost = true;
+            };
+            this.stopHostingGame = function () {
+                _this.socket.emit('Stop Hosting Game', {});
+                _this.amITryingToHost = false;
+            };
+            this.isHosting = function () {
+                return _this.amITryingToHost;
+            };
             this.stageData = stageData;
             this.updateGameListingCallback = updateGameListingCallback;
             this.connectToGameHostingServer();
         }
-        GameHostingManager.prototype.connectToGameHostingServer = function () {
-            var _this = this;
-            this.socket = io.connect(Util.Conf.hostURL);
-
-            this.socket.on('connect', function () {
-                _this.isConnected = true;
-                clearTimeout(_this.timeout);
-                _this.requestList();
-            });
-
-            this.socket.on('disconnect', function () {
-                _this.isConnected = false;
-                clearTimeout(_this.timeout);
-            });
-
-            this.socket.on('Update Hosting Info', function (data) {
-                _this.amITryingToHost = data.amIHosting;
-            });
-
-            this.socket.on('GameList', this.updateGameListingCallback);
-        };
-
-        GameHostingManager.prototype.onHostingConnected = function () {
-            this.stageData.game.beginGameAsClient();
-            this.removeMM();
-        };
-        GameHostingManager.prototype.onJoiningConnected = function () {
-            this.stageData.game.beginGameAsHost();
-            this.removeMM();
-        };
-        GameHostingManager.prototype.removeMM = function () {
-            this.socket.emit('disconnect', {});
-            Util.Interface.clearInterface();
-            //SHOULD I REMOVE REFERENCES SO THIS CAN BE GARBAGE COLLECTED? IDTS
-        };
-
-        GameHostingManager.prototype.hostGame = function (gameID) {
-            this.socket.emit('Host Game', gameID);
-            this.stageData.peerMan.beginHosting(this.onHostingConnected);
-            this.amITryingToHost = true;
-        };
-        GameHostingManager.prototype.stopHostingGame = function () {
-            this.socket.emit('Stop Hosting Game', {});
-            this.amITryingToHost = false;
-        };
-
-        GameHostingManager.prototype.isHosting = function () {
-            return this.amITryingToHost;
-        };
         GameHostingManager.gameListRefreshRateInMS = 1500;
         return GameHostingManager;
     })();
@@ -504,6 +507,16 @@ var CombatPong;
                 _this.game.tick();
                 requestAnimationFrame(_this.tick);
             };
+            this.attachBorder = function () {
+                _this.rect = new Kinetic.Rect({});
+                _this.rect.x(0);
+                _this.rect.y(0);
+                _this.rect.width(_this.baseWidth);
+                _this.rect.height(_this.baseHeight);
+                _this.rect.stroke("Black");
+                _this.rect.strokeWidth(3.5);
+                _this.stageData.UI.add(_this.rect);
+            };
             // If I don't have this there is occasionally a scrollbar on fullscreen, this is just light padding to prevent that from happening
             this.percentage = .99;
             this.stage = new Kinetic.Stage({ width: width, height: height, container: divID });
@@ -517,17 +530,6 @@ var CombatPong;
 
             requestAnimationFrame(this.tick);
         }
-        Screen.prototype.attachBorder = function () {
-            this.rect = new Kinetic.Rect({});
-            this.rect.x(0);
-            this.rect.y(0);
-            this.rect.width(this.baseWidth);
-            this.rect.height(this.baseHeight);
-            this.rect.stroke("Black");
-            this.rect.strokeWidth(3.5);
-            this.stageData.UI.add(this.rect);
-        };
-
         Screen.prototype.limitStageByWidth = function (elementWidth, elementHeight) {
             var scale = elementWidth / this.baseWidth;
             this.stageData.stage.scaleX(scale);
@@ -698,52 +700,52 @@ var CombatPong;
     ;
     var PeerMan = (function () {
         function PeerMan() {
+            var _this = this;
             this.hostingState = 2 /* Neither */;
             this.timeStart = -1;
-            this.generatePeer();
-        }
-        PeerMan.prototype.generatePeer = function () {
-            this.hostingState = 2 /* Neither */;
-            this.peer = new Peer(Util.Conf.uniqueID, { host: 'localhost', port: 9000, path: '/', key: 'peerjs' });
-        };
-
-        PeerMan.prototype.tick = function () {
-        };
-        PeerMan.prototype.beginJoining = function (onJoinConnection, idToJoin) {
-            var _this = this;
-            var conn = this.peer.connect(idToJoin);
-            conn.on('open', function () {
-                onJoinConnection(); //trigger callback
-                _this.hostingState = 1 /* Client */;
-                _this.zeroOutTheTime(); //Syncs time between client and host
-            });
-            conn.on('data', function (data) {
-                alert(data);
-            });
-        };
-
-        PeerMan.prototype.beginHosting = function (onHostingConnection) {
-            var _this = this;
-            this.peer.on('connection', function (dataConnection) {
-                var conn = dataConnection;
+            this.generatePeer = function () {
+                _this.hostingState = 2 /* Neither */;
+                _this.peer = new Peer(Util.Conf.uniqueID, { host: 'localhost', port: 9000, path: '/', key: 'peerjs' });
+            };
+            this.networkTickCount = 0;
+            this.tick = function () {
+                _this.networkTickCount++;
+            };
+            this.beginJoining = function (onJoinConnection, idToJoin) {
+                var conn = _this.peer.connect(idToJoin);
                 conn.on('open', function () {
-                    conn.send('HELLO PERSON :]');
-                    onHostingConnection(); //trigger callback
-                    _this.hostingState = 0 /* Host */;
+                    onJoinConnection(); //trigger callback
+                    _this.hostingState = 1 /* Client */;
                     _this.zeroOutTheTime(); //Syncs time between client and host
                 });
-            });
-        };
-        PeerMan.prototype.zeroOutTheTime = function () {
-            this.timeStart = (new Date()).getMilliseconds();
-        };
-        PeerMan.prototype.timeSinceStartMS = function () {
-            if (this.timeStart < 0)
-                return this.timeStart;
+                conn.on('data', function (data) {
+                    alert(data);
+                });
+            };
+            this.beginHosting = function (onHostingConnection) {
+                _this.peer.on('connection', function (dataConnection) {
+                    var conn = dataConnection;
+                    conn.on('open', function () {
+                        //conn.send('HELLO PERSON :]');
+                        onHostingConnection(); //trigger callback
+                        _this.hostingState = 0 /* Host */;
+                        _this.zeroOutTheTime(); //Syncs time between client and host
+                    });
+                });
+            };
+            this.zeroOutTheTime = function () {
+                _this.timeStart = (new Date()).getTime();
+            };
+            this.timeSinceStartMS = function () {
+                if (_this.timeStart < 0)
+                    return _this.timeStart;
 
-            return (new Date()).getMilliseconds() - this.timeStart;
-        };
-        PeerMan.defaultNetworkFrameLengthInMS = 1 / 8 * 1000;
+                return (new Date()).getTime() - _this.timeStart;
+            };
+            this.generatePeer();
+        }
+        PeerMan.defaultNetworkFrameLengthInMS = (1 / 8) * 1000;
+        PeerMan.networkPaddingFrameNumber = 2;
         return PeerMan;
     })();
     CombatPong.PeerMan = PeerMan;
@@ -893,5 +895,28 @@ var CombatPong;
         if (screen)
             screen.fitStageToScreen();
     };
+})(CombatPong || (CombatPong = {}));
+var CombatPong;
+(function (CombatPong) {
+    var FrameData = (function () {
+        function FrameData(stageData) {
+            this.stageData = stageData;
+            this.player1 = new CombatPong.Player();
+            this.player2 = new CombatPong.Player();
+        }
+        return FrameData;
+    })();
+    CombatPong.FrameData = FrameData;
+    ;
+})(CombatPong || (CombatPong = {}));
+var CombatPong;
+(function (CombatPong) {
+    var Player = (function () {
+        function Player() {
+        }
+        return Player;
+    })();
+    CombatPong.Player = Player;
+    ;
 })(CombatPong || (CombatPong = {}));
 //# sourceMappingURL=all.js.map
