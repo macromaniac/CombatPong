@@ -33,29 +33,31 @@ module CombatPong {
 			Util.Interface.d.appendChild(t);
 			var b: HTMLElement = Util.Interface.addStandardButton("Join");
             b.onclick = () => {
-                this.joinGame(gameID);
+                this.onJoinButtonClicked(gameID);
             }
 			Util.Interface.d.appendChild(document.createElement("br"));
 		}
 		private displayHostOption() {
 			var b:HTMLElement = Util.Interface.addStandardButton("Host Game");
-            b.onclick = this.hostGame;
+            b.onclick = this.onHostButtonClicked;
             if (this.gameHostingManager.isHosting()) {
                 Util.Interface.d.appendChild(document.createElement("br"));
 				Util.Interface.d.appendChild(document.createTextNode("You are currently hosting game " + this.peerIDS.indexOf(Util.Conf.uniqueID)));
             }
 		}
-        private hostGame = () => {
+        private onHostButtonClicked = () => {
             this.gameHostingManager.hostGame(Util.Conf.uniqueID);
             this.gameHostingManager.requestList();
         }
 		private clearInterface() {
 			Util.Interface.clearInterface();
 		}
-        private joinGame(game: string) {
+        private onJoinButtonClicked(peerIDToJoin: string) {
             this.gameHostingManager.stopHostingGame();
             this.gameHostingManager.requestList();
 
+			this.stageData.peerMan.beginJoining(
+				this.gameHostingManager.onJoiningConnected, peerIDToJoin);
             //alert("Joined game " + game.toString());
         }
 		private displayCouldNotContactServer() {

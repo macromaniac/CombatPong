@@ -260,13 +260,15 @@ var CombatPong;
             this.tickNumber = 0;
             this.expectedTickNumber = 0;
             this.stageData = stageData;
+            this.stageData.game = this;
 
             //this.world = new World(stageData);
-            this.peerMan = new CombatPong.PeerMan();
+            this.peerMan = this.stageData.peerMan;
             this.gameHostingInterface = new CombatPong.GameHostingInterface(stageData);
         }
         Game.prototype.tick = function () {
-            this.regulatedTick();
+            if (this.peerMan.timeSinceStartMS() > 0)
+                this.regulatedTick();
         };
 
         Game.prototype.regulatedTick = function () {
@@ -290,16 +292,15 @@ var CombatPong;
                 return true;
             return false;
         };
+        Game.prototype.beginGameAsHost = function () {
+            alert('BEGAN HOST');
+        };
+        Game.prototype.beginGameAsClient = function () {
+            alert('BEGAN CLIENT');
+        };
         return Game;
     })();
     CombatPong.Game = Game;
-    ;
-    var Timer = (function () {
-        function Timer() {
-        }
-        return Timer;
-    })();
-    CombatPong.Timer = Timer;
     ;
 })(CombatPong || (CombatPong = {}));
 var CombatPong;
@@ -375,7 +376,7 @@ var CombatPong;
                 }
                 _this.displayHostOption();
             };
-            this.hostGame = function () {
+            this.onHostButtonClicked = function () {
                 _this.gameHostingManager.hostGame(Util.Conf.uniqueID);
                 _this.gameHostingManager.requestList();
             };
@@ -390,13 +391,13 @@ var CombatPong;
             Util.Interface.d.appendChild(t);
             var b = Util.Interface.addStandardButton("Join");
             b.onclick = function () {
-                _this.joinGame(gameID);
+                _this.onJoinButtonClicked(gameID);
             };
             Util.Interface.d.appendChild(document.createElement("br"));
         };
         GameHostingInterface.prototype.displayHostOption = function () {
             var b = Util.Interface.addStandardButton("Host Game");
-            b.onclick = this.hostGame;
+            b.onclick = this.onHostButtonClicked;
             if (this.gameHostingManager.isHosting()) {
                 Util.Interface.d.appendChild(document.createElement("br"));
                 Util.Interface.d.appendChild(document.createTextNode("You are currently hosting game " + this.peerIDS.indexOf(Util.Conf.uniqueID)));
@@ -406,9 +407,11 @@ var CombatPong;
         GameHostingInterface.prototype.clearInterface = function () {
             Util.Interface.clearInterface();
         };
-        GameHostingInterface.prototype.joinGame = function (game) {
+        GameHostingInterface.prototype.onJoinButtonClicked = function (peerIDToJoin) {
             this.gameHostingManager.stopHostingGame();
             this.gameHostingManager.requestList();
+
+            this.stageData.peerMan.beginJoining(this.gameHostingManager.onJoiningConnected, peerIDToJoin);
             //alert("Joined game " + game.toString());
         };
         GameHostingInterface.prototype.displayCouldNotContactServer = function () {
@@ -432,7 +435,7 @@ var CombatPong;
                 _this.timeout = setTimeout(_this.requestList, GameHostingManager.gameListRefreshRateInMS);
             };
             this.isConnected = false;
-            this.amIHosting = false;
+            this.amITryingToHost = false;
             this.stageData = stageData;
             this.updateGameListingCallback = updateGameListingCallback;
             this.connectToGameHostingServer();
@@ -443,7 +446,7 @@ var CombatPong;
 
             this.socket.on('connect', function () {
                 _this.isConnected = true;
-                _this.timeout = setTimeout(_this.requestList, GameHostingManager.gameListRefreshRateInMS);
+                clearTimeout(_this.timeout);
                 _this.requestList();
             });
 
@@ -453,30 +456,40 @@ var CombatPong;
             });
 
             this.socket.on('Update Hosting Info', function (data) {
-                _this.amIHosting = data.amIHosting;
+                _this.amITryingToHost = data.amIHosting;
             });
 
             this.socket.on('GameList', this.updateGameListingCallback);
         };
 
         GameHostingManager.prototype.onHostingConnected = function () {
-            this.socket.emit('disconnect', {});
+            this.stageData.game.beginGameAsClient();
+            this.removeMM();
         };
+        GameHostingManager.prototype.onJoiningConnected = function () {
+            this.stageData.game.beginGameAsHost();
+            this.removeMM();
+        };
+        GameHostingManager.prototype.removeMM = function () {
+            this.socket.emit('disconnect', {});
+            Util.Interface.clearInterface();
+            //SHOULD I REMOVE REFERENCES SO THIS CAN BE GARBAGE COLLECTED? IDTS
+        };
+
         GameHostingManager.prototype.hostGame = function (gameID) {
             this.socket.emit('Host Game', gameID);
             this.stageData.peerMan.beginHosting(this.onHostingConnected);
-            this.amIHosting = true;
+            this.amITryingToHost = true;
         };
         GameHostingManager.prototype.stopHostingGame = function () {
             this.socket.emit('Stop Hosting Game', {});
-            this.stageData.peerMan.stopHosting();
-            this.amIHosting = false;
+            this.amITryingToHost = false;
         };
 
         GameHostingManager.prototype.isHosting = function () {
-            return this.amIHosting;
+            return this.amITryingToHost;
         };
-        GameHostingManager.gameListRefreshRateInMS = 3500;
+        GameHostingManager.gameListRefreshRateInMS = 1500;
         return GameHostingManager;
     })();
     CombatPong.GameHostingManager = GameHostingManager;
@@ -676,52 +689,64 @@ var MWG;
 })(MWG || (MWG = {}));
 var CombatPong;
 (function (CombatPong) {
+    (function (HostingState) {
+        HostingState[HostingState["Host"] = 0] = "Host";
+        HostingState[HostingState["Client"] = 1] = "Client";
+        HostingState[HostingState["Neither"] = 2] = "Neither";
+    })(CombatPong.HostingState || (CombatPong.HostingState = {}));
+    var HostingState = CombatPong.HostingState;
+    ;
     var PeerMan = (function () {
         function PeerMan() {
+            this.hostingState = 2 /* Neither */;
+            this.timeStart = -1;
             this.generatePeer();
         }
         PeerMan.prototype.generatePeer = function () {
-            this.peer = new Peer(Util.Conf.uniqueID, { host: 'localhost', port: 9000, path: '/myapp' });
+            this.hostingState = 2 /* Neither */;
+            this.peer = new Peer(Util.Conf.uniqueID, { host: 'localhost', port: 9000, path: '/', key: 'peerjs' });
         };
 
         PeerMan.prototype.tick = function () {
         };
+        PeerMan.prototype.beginJoining = function (onJoinConnection, idToJoin) {
+            var _this = this;
+            var conn = this.peer.connect(idToJoin);
+            conn.on('open', function () {
+                onJoinConnection(); //trigger callback
+                _this.hostingState = 1 /* Client */;
+                _this.zeroOutTheTime(); //Syncs time between client and host
+            });
+            conn.on('data', function (data) {
+                alert(data);
+            });
+        };
+
         PeerMan.prototype.beginHosting = function (onHostingConnection) {
             var _this = this;
             this.peer.on('connection', function (dataConnection) {
-                _this.stopAcceptingConnections();
-                onHostingConnection();
+                var conn = dataConnection;
+                conn.on('open', function () {
+                    conn.send('HELLO PERSON :]');
+                    onHostingConnection(); //trigger callback
+                    _this.hostingState = 0 /* Host */;
+                    _this.zeroOutTheTime(); //Syncs time between client and host
+                });
             });
         };
-        PeerMan.prototype.stopHosting = function () {
-            this.peer.destroy();
-            this.generatePeer();
-        };
-        PeerMan.prototype.stopAcceptingConnections = function () {
-            this.peer.destroy();
+        PeerMan.prototype.zeroOutTheTime = function () {
+            this.timeStart = (new Date()).getMilliseconds();
         };
         PeerMan.prototype.timeSinceStartMS = function () {
-            return 1;
+            if (this.timeStart < 0)
+                return this.timeStart;
+
+            return (new Date()).getMilliseconds() - this.timeStart;
         };
         PeerMan.defaultNetworkFrameLengthInMS = 1 / 8 * 1000;
         return PeerMan;
     })();
     CombatPong.PeerMan = PeerMan;
-    ;
-    var PeerManServer = (function () {
-        function PeerManServer() {
-        }
-        return PeerManServer;
-    })();
-    CombatPong.PeerManServer = PeerManServer;
-    ;
-    var PeerManClient = (function () {
-        function PeerManClient(serverID) {
-            this.serverID = serverID;
-        }
-        return PeerManClient;
-    })();
-    CombatPong.PeerManClient = PeerManClient;
     ;
 })(CombatPong || (CombatPong = {}));
 var Util;

@@ -11,6 +11,7 @@
         public baseHeight: number;
 
 		public peerMan: PeerMan;
+		public game: Game;
 
 		private findNetworkSettings() {
 

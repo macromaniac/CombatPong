@@ -2,7 +2,7 @@
 module CombatPong {
 	export class GameHostingManager {
 
-		public static gameListRefreshRateInMS: number = 3500;
+		public static gameListRefreshRateInMS: number = 1500;
 
 		private stageData: StageData;
 		private updateGameListingCallback: (peerIDS: string[]) => void;
@@ -24,14 +24,14 @@ module CombatPong {
 
 		public isConnected: boolean = false;
         private timeout: number;
-        private amIHosting: boolean = false;
+        private amITryingToHost: boolean = false;
 
 		public connectToGameHostingServer() {
 			this.socket = io.connect(Util.Conf.hostURL);
 
             this.socket.on('connect', ()=> {
                 this.isConnected = true;
-                this.timeout = setTimeout(this.requestList, GameHostingManager.gameListRefreshRateInMS);
+                clearTimeout(this.timeout);
                 this.requestList();
             });
 
@@ -41,28 +41,38 @@ module CombatPong {
             });
 
             this.socket.on('Update Hosting Info', (data) => {
-                this.amIHosting = data.amIHosting
+                this.amITryingToHost = data.amIHosting
             });
 
             this.socket.on('GameList', this.updateGameListingCallback);
 		}
 
 		public onHostingConnected() {
-			this.socket.emit('disconnect', {});
+			this.stageData.game.beginGameAsClient();
+			this.removeMM();
 		}
+		public onJoiningConnected() {
+			this.stageData.game.beginGameAsHost();
+			this.removeMM();
+		}
+		private removeMM() {
+			this.socket.emit('disconnect', {});
+			Util.Interface.clearInterface();
+			//SHOULD I REMOVE REFERENCES SO THIS CAN BE GARBAGE COLLECTED? IDTS
+		}
+
         public hostGame(gameID:string) {
             this.socket.emit('Host Game', gameID);
 			this.stageData.peerMan.beginHosting(this.onHostingConnected);
-            this.amIHosting = true;
+            this.amITryingToHost = true;
         }
         public stopHostingGame() {
             this.socket.emit('Stop Hosting Game', {});
-			this.stageData.peerMan.stopHosting();
-            this.amIHosting = false;
+            this.amITryingToHost = false;
         }
 
         public isHosting():boolean {
-            return this.amIHosting;
+            return this.amITryingToHost;
         }
 
 	}

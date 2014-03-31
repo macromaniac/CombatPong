@@ -69,9 +69,8 @@ declare module CombatPong {
         public expectedTickNumber: number;
         private regulatedTick();
         private isNetworkTick(tickNo);
-    }
-    class Timer {
-        constructor();
+        public beginGameAsHost(): void;
+        public beginGameAsClient(): void;
     }
 }
 declare module CombatPong {
@@ -103,9 +102,9 @@ declare module CombatPong {
         private updateGameListing;
         private displayJoinableGame(gameTitle, gameID);
         private displayHostOption();
-        private hostGame;
+        private onHostButtonClicked;
         private clearInterface();
-        private joinGame(game);
+        private onJoinButtonClicked(peerIDToJoin);
         private displayCouldNotContactServer();
     }
 }
@@ -119,9 +118,11 @@ declare module CombatPong {
         public requestList: () => void;
         public isConnected: boolean;
         private timeout;
-        private amIHosting;
+        private amITryingToHost;
         public connectToGameHostingServer(): void;
         public onHostingConnected(): void;
+        public onJoiningConnected(): void;
+        private removeMM();
         public hostGame(gameID: string): void;
         public stopHostingGame(): void;
         public isHosting(): boolean;
@@ -154,6 +155,7 @@ declare module CombatPong {
         public baseWidth: number;
         public baseHeight: number;
         public peerMan: PeerMan;
+        public game: Game;
         private findNetworkSettings();
         constructor(stage: Kinetic.Stage, baseWidth: number, baseHeight: number);
     }
@@ -209,23 +211,23 @@ declare module MWG {
     }
 }
 declare module CombatPong {
+    enum HostingState {
+        Host = 0,
+        Client = 1,
+        Neither = 2,
+    }
     class PeerMan {
         static defaultNetworkFrameLengthInMS: number;
+        public hostingState: HostingState;
+        public timeStart: number;
         private peer;
         private generatePeer();
         constructor();
         public tick(): void;
+        public beginJoining(onJoinConnection: () => any, idToJoin: string): void;
         public beginHosting(onHostingConnection: () => any): void;
-        public stopHosting(): void;
-        private stopAcceptingConnections();
+        private zeroOutTheTime();
         public timeSinceStartMS(): number;
-    }
-    class PeerManServer {
-        constructor();
-    }
-    class PeerManClient {
-        public serverID: string;
-        constructor(serverID: string);
     }
 }
 declare module Util {

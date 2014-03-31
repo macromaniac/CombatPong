@@ -1,6 +1,6 @@
 ﻿    //var io = require('socket.io').listen(80);
 var io = require('socket.io').listen(23156);
-
+io.set('log level', 1); 
 var gameList = [];
 
 console.log("Starting Socket Server");
@@ -47,7 +47,7 @@ console.log("Starting peer service..");
 var PeerServer = require('peer').PeerServer;
 var server = new PeerServer({ port: 9000, path: '/', key: 'peerjs' });
 server.on('connection', function (id) {
-    console.log("Connection Brokered");
+    console.log("Peer connected to server");
 });
 server.on("disconnect", function (id) {
     console.log("Peer disconnected from server");

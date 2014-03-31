@@ -1,41 +1,55 @@
 ﻿module CombatPong {
+	export enum HostingState { Host, Client, Neither };
 	export class PeerMan {
 		public static defaultNetworkFrameLengthInMS: number = 1 / 8 * 1000;
+
+		public hostingState: HostingState = HostingState.Neither;
+
+		public timeStart: number = -1;
 
 		private peer: Peer;
 
 		private generatePeer() {
+			this.hostingState = HostingState.Neither;
 			this.peer = new Peer(Util.Conf.uniqueID,
-				{ host: 'localhost', port: 9000, path: '/myapp' });
+				{ host: 'localhost', port: 9000, path: '/', key:'peerjs' });
 		}
 		constructor() {
 			this.generatePeer();
 		}
 		public tick() { }
-		public beginHosting(onHostingConnection: () => any) {
-			this.peer.on('connection', (dataConnection) => {
-				this.stopAcceptingConnections();
-				onHostingConnection();
+		public beginJoining(onJoinConnection: () => any, idToJoin: string) {
+			var conn = this.peer.connect(idToJoin);
+			conn.on('open', () => {
+				onJoinConnection(); //trigger callback
+				this.hostingState = HostingState.Client;
+				this.zeroOutTheTime(); //Syncs time between client and host
+			});
+			conn.on('data', (data) => {
+				alert(data);
 			});
 		}
-		public stopHosting() {
-			this.peer.destroy();
-			this.generatePeer();
+
+		public beginHosting(onHostingConnection: () => any) {
+			this.peer.on('connection', (dataConnection) => {
+				var conn = <DataConnection>dataConnection;
+				conn.on('open', () => {
+					conn.send('HELLO PERSON :]');
+					onHostingConnection(); //trigger callback
+					this.hostingState = HostingState.Host;
+					this.zeroOutTheTime(); //Syncs time between client and host
+				});
+			});
 		}
-		private stopAcceptingConnections() {
-			this.peer.destroy();
+		private zeroOutTheTime() {
+			this.timeStart = (new Date()).getMilliseconds();
 		}
 		public timeSinceStartMS(): number {
-			return 1;
+			if (this.timeStart < 0)
+				return this.timeStart;
+
+			return (new Date()).getMilliseconds() - this.timeStart;
 		}
 	};
-	export class PeerManServer {
-		constructor() { }
-	};
-	export class PeerManClient {
-		serverID: string;
-		constructor(serverID: string) {
-			this.serverID = serverID;
-		}
-	};
+
 }

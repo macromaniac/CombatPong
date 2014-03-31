@@ -8,13 +8,15 @@
 		private gameHostingInterface: GameHostingInterface;
 		constructor(stageData: StageData) {
 			this.stageData = stageData;
+			this.stageData.game = this;
 			//this.world = new World(stageData);
-			this.peerMan = new PeerMan();
+			this.peerMan = this.stageData.peerMan;
 			this.gameHostingInterface = new GameHostingInterface(stageData);
 
 		}
 		public tick() {
-			this.regulatedTick();
+			if (this.peerMan.timeSinceStartMS() > 0)
+				this.regulatedTick();
 		}
 		tickNumber: number = 0;
 		expectedTickNumber: number = 0;
@@ -41,8 +43,11 @@
 				return true;
 			return false;
 		}
-	};
-	export class Timer {
-		constructor() { }
+		public beginGameAsHost() {
+			alert('BEGAN HOST');
+		}
+		public beginGameAsClient() {
+			alert('BEGAN CLIENT');
+		}
 	};
 }
