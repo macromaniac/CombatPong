@@ -11,7 +11,6 @@ module CombatPong {
 			this.stageData = stageData;
 			this.updateGameListingCallback = updateGameListingCallback;
 			this.connectToGameHostingServer();
-
 		}
 
 		private socket: Socket;
@@ -59,7 +58,7 @@ module CombatPong {
 				this.stageData.game.beginGameAsHost();
 				this.removeMM();
 		}
-		private removeMM = ()=> {
+		private removeMM () {
 			this.socket.emit('disconnect', {});
 			Util.Interface.clearInterface();
 			//SHOULD I REMOVE REFERENCES SO THIS CAN BE GARBAGE COLLECTED? IDTS

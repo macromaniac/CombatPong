@@ -37,6 +37,9 @@
     <TypeScriptCompile Include="Src\Game\Ball.ts" />
     <TypeScriptCompile Include="Src\Game\Collision\CollisionManager.ts" />
     <TypeScriptCompile Include="Src\Game\Game.ts" />
+    <TypeScriptCompile Include="Src\Button.ts" />
+    <TypeScriptCompile Include="Src\InputMan.ts" />
+    <TypeScriptCompile Include="Src\Macro.ts" />
     <TypeScriptCompile Include="Src\MatchMaking\GameHostingInterface.ts" />
     <TypeScriptCompile Include="Src\MatchMaking\GameHostingManager.ts" />
     <TypeScriptCompile Include="Src\Game\Collision\GameObject.ts" />
@@ -46,7 +49,6 @@
     <TypeScriptCompile Include="Src\Meta\Screen.ts" />
     <TypeScriptCompile Include="socket.io-client.d.ts" />
     <TypeScriptCompile Include="Src\Meta\StageData.ts" />
-    <TypeScriptCompile Include="Src\Player.ts" />
     <TypeScriptCompile Include="Src\UtilityFunctions.ts" />
     <TypeScriptCompile Include="Src\Game\Wall.ts" />
     <TypeScriptCompile Include="Src\Game\World.ts" />

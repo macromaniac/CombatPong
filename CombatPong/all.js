@@ -471,11 +471,6 @@ var CombatPong;
                 _this.stageData.game.beginGameAsHost();
                 _this.removeMM();
             };
-            this.removeMM = function () {
-                _this.socket.emit('disconnect', {});
-                Util.Interface.clearInterface();
-                //SHOULD I REMOVE REFERENCES SO THIS CAN BE GARBAGE COLLECTED? IDTS
-            };
             this.hostGame = function (gameID) {
                 _this.socket.emit('Host Game', gameID);
                 _this.stageData.peerMan.beginHosting(_this.onHostingConnected);
@@ -492,6 +487,11 @@ var CombatPong;
             this.updateGameListingCallback = updateGameListingCallback;
             this.connectToGameHostingServer();
         }
+        GameHostingManager.prototype.removeMM = function () {
+            this.socket.emit('disconnect', {});
+            Util.Interface.clearInterface();
+            //SHOULD I REMOVE REFERENCES SO THIS CAN BE GARBAGE COLLECTED? IDTS
+        };
         GameHostingManager.gameListRefreshRateInMS = 1500;
         return GameHostingManager;
     })();
@@ -896,9 +896,63 @@ var CombatPong;
             screen.fitStageToScreen();
     };
 })(CombatPong || (CombatPong = {}));
+var Button;
+(function (Button) {
+    Button.buttonMax = 100;
+    (function (Code) {
+        Code[Code["Shift"] = 16] = "Shift";
+        Code[Code["Ctrl"] = 17] = "Ctrl";
+        Code[Code["Alt"] = 18] = "Alt";
+        Code[Code["Left"] = 37] = "Left";
+        Code[Code["Up"] = 38] = "Up";
+        Code[Code["Right"] = 39] = "Right";
+        Code[Code["Down"] = 40] = "Down";
+        Code[Code["Zero"] = 48] = "Zero";
+        Code[Code["One"] = 49] = "One";
+        Code[Code["Two"] = 50] = "Two";
+        Code[Code["Three"] = 51] = "Three";
+        Code[Code["Four"] = 52] = "Four";
+        Code[Code["Five"] = 53] = "Five";
+        Code[Code["Six"] = 54] = "Six";
+        Code[Code["Seven"] = 55] = "Seven";
+        Code[Code["Eight"] = 56] = "Eight";
+        Code[Code["Nine"] = 57] = "Nine";
+        Code[Code["A"] = 65] = "A";
+        Code[Code["B"] = 66] = "B";
+        Code[Code["C"] = 67] = "C";
+        Code[Code["D"] = 68] = "D";
+        Code[Code["E"] = 69] = "E";
+        Code[Code["F"] = 70] = "F";
+        Code[Code["G"] = 71] = "G";
+        Code[Code["H"] = 72] = "H";
+        Code[Code["I"] = 73] = "I";
+        Code[Code["J"] = 74] = "J";
+        Code[Code["K"] = 75] = "K";
+        Code[Code["L"] = 76] = "L";
+        Code[Code["M"] = 77] = "M";
+        Code[Code["N"] = 78] = "N";
+        Code[Code["O"] = 79] = "O";
+        Code[Code["P"] = 80] = "P";
+        Code[Code["Q"] = 81] = "Q";
+        Code[Code["R"] = 82] = "R";
+        Code[Code["S"] = 83] = "S";
+        Code[Code["T"] = 84] = "T";
+        Code[Code["U"] = 85] = "U";
+        Code[Code["V"] = 86] = "V";
+        Code[Code["W"] = 87] = "W";
+        Code[Code["X"] = 88] = "X";
+        Code[Code["Y"] = 89] = "Y";
+        Code[Code["Z"] = 90] = "Z";
+    })(Button.Code || (Button.Code = {}));
+    var Code = Button.Code;
+    ;
+})(Button || (Button = {}));
 var CombatPong;
 (function (CombatPong) {
     var FrameData = (function () {
+        //MAKE IT SO THAT EVENT LISTS ARE TIED TO PLAYERS, I.E THEY HAVE PLAYER NUMBER EMBEDED WITHIN
+        //THEM. DO THIS BECAUSE WHEN THE HOST SENDS PLAYER DATA TO CLIENTS THEY NEED TO KNOW
+        //WHAT PLAYER DID WHAT ANYWAYS, ALSO THIS MAKES ORGANIZATION MUCH EASIER
         function FrameData(stageData) {
             this.stageData = stageData;
             this.player1 = new CombatPong.Player();
@@ -909,14 +963,210 @@ var CombatPong;
     CombatPong.FrameData = FrameData;
     ;
 })(CombatPong || (CombatPong = {}));
+//Handles input for multiple users
 var CombatPong;
 (function (CombatPong) {
+    var InputMan = (function () {
+        function InputMan() {
+        }
+        return InputMan;
+    })();
+    CombatPong.InputMan = InputMan;
+    ;
+
+    //player.setNetFrame(#)
     var Player = (function () {
         function Player() {
+            var _this = this;
+            this.eventLists = [];
+            this.frameAt = 0;
+            //This will return true if the network data exists, and false if the network data
+            //does not exist
+            this.tryToIncreaseState = function () {
+                if (_this.frameAt >= _this.eventLists.length)
+                    return false;
+                _this.frameAt++;
+                _this.state.updateFromEventList(_this.eventLists[_this.frameAt]);
+                console.log("FrameAt: " + _this.frameAt + " FrameMax: " + _this.eventLists.length);
+                return true;
+            };
+            this.addEventList = function (eventList) {
+                _this.eventLists.push(eventList);
+            };
         }
         return Player;
     })();
     CombatPong.Player = Player;
     ;
 })(CombatPong || (CombatPong = {}));
+var Macro;
+(function (Macro) {
+    //How to use:
+    //Record for one network tick, then call state.update() for your own network tick
+    //The problem is there needs to be a list of current event lists, and the list needs
+    //to be addable to easily. This is the next step.
+    var currentEventList = new EventList(0);
+
+    var recording = false;
+
+    function record() {
+        recording = true;
+    }
+    Macro.record = record;
+    function stopRecording() {
+        recording = false;
+    }
+    Macro.stopRecording = stopRecording;
+
+    function handleKeyPress(key) {
+        if (recording == false)
+            return;
+        currentEventList.addEvent(new KeyEvent(key, true));
+    }
+    function handleKeyUp(key) {
+        if (recording == false)
+            return;
+        currentEventList.addEvent(new KeyEvent(key, false));
+    }
+
+    function handleMouseUp(event) {
+        if (recording == false)
+            return;
+        currentEventList.addEvent(new MouseEvent(event.screenX, event.screenY, false));
+    }
+    function handleMouseDown(event) {
+        if (recording == false)
+            return;
+        currentEventList.addEvent(new MouseEvent(event.screenX, event.screenY, true));
+    }
+
+    var KeyEvent = (function (_super) {
+        __extends(KeyEvent, _super);
+        function KeyEvent(keyCode, isKeyDown) {
+            this.keyCode = keyCode;
+            this.isKeyDown = isKeyDown;
+            _super.call(this);
+        }
+        KeyEvent.prototype.execute = function (state) {
+            if (this.keyCode < Button.buttonMax) {
+                state.buttonDownBooleans[this.keyCode] = this.isKeyDown;
+                if (this.isKeyDown == false)
+                    state.wasKeyReleased[this.keyCode] = true;
+            }
+        };
+        return KeyEvent;
+    })(Event);
+    Macro.KeyEvent = KeyEvent;
+    ;
+    var MouseEvent = (function (_super) {
+        __extends(MouseEvent, _super);
+        function MouseEvent(x, y, mouseClick) {
+            if (typeof mouseClick === "undefined") { mouseClick = false; }
+            this.x = x;
+            this.y = y;
+            this.mouseClick = mouseClick;
+            _super.call(this);
+        }
+        MouseEvent.prototype.execute = function (state) {
+            state.mouseEventList.push(this);
+        };
+        return MouseEvent;
+    })(Event);
+    Macro.MouseEvent = MouseEvent;
+    ;
+    var Event = (function () {
+        function Event() {
+        }
+        Event.prototype.execute = function (state) {
+        };
+        return Event;
+    })();
+    Macro.Event = Event;
+    ;
+
+    var lastX = 0;
+    var lastY = 0;
+    var EventList = (function () {
+        function EventList(frameAt) {
+            this.list = [];
+            this.frameAt = frameAt;
+        }
+        EventList.prototype.addEvent = function (e) {
+            if (!this.nextEventList)
+                this.nextEventList = new EventList(this.frameAt + 1);
+            this.nextEventList.immediatelyAddEvent(e);
+        };
+        EventList.prototype.immediatelyAddEvent = function (e) {
+            this.list.push(e);
+        };
+        EventList.prototype.getNextEventList = function () {
+            //theoretically, multiple get calls could add multiple mouse events,
+            //but thats honestly not a big deal
+            this.nextEventList.immediatelyAddEvent(new MouseEvent(lastX, lastY));
+            return this.nextEventList;
+        };
+        return EventList;
+    })();
+    Macro.EventList = EventList;
+    ;
+    var State = (function () {
+        function State() {
+            var _this = this;
+            this.buttonDownBooleans = [];
+            this.wasKeyReleased = [];
+            this.mouseEventList = [];
+            this.eventList = new EventList(0);
+            this.updateFromEventList = function (eventList) {
+                _this.eventList = eventList;
+                _this.update();
+            };
+            this.updateFromRecording = function () {
+                _this.eventList = currentEventList;
+            };
+            this.update = function () {
+                _this.mouseEventList = [];
+                for (var i = 0; i < _this.eventList.list.length; ++i) {
+                    _this.eventList.list[i].execute(_this);
+                }
+                _this.eventList = _this.eventList.getNextEventList();
+            };
+            this.isKeyDown = function (key) {
+                return _this.buttonDownBooleans[key];
+            };
+            this.isKeyUp = function (key) {
+                return _this.buttonDownBooleans[key];
+            };
+            this.isKeyReleased = function (key) {
+                return _this.wasKeyReleased[key];
+            };
+            this.getMouseEvents = function () {
+                return _this.mouseEventList;
+            };
+            this.generateButtonMapArray();
+        }
+        State.prototype.generateButtonMapArray = function () {
+            while (this.buttonDownBooleans.length < Button.buttonMax) {
+                this.buttonDownBooleans.push(false);
+                this.wasKeyReleased.push(false);
+            }
+        };
+        State.prototype.undoReleaseKeys = function () {
+            for (var i = 0; i < Button.buttonMax; ++i) {
+                this.wasKeyReleased[i] = false;
+            }
+        };
+        return State;
+    })();
+    Macro.State = State;
+    ;
+
+    $(document).keydown(handleKeyPress);
+    $(document).keyup(handleKeyPress);
+    $(document).mouseup(handleMouseUp);
+    $(document).mousedown(handleMouseDown);
+    $(document).mousemove(function (event) {
+        lastX = event.pageX;
+        lastY = event.pageY;
+    });
+})(Macro || (Macro = {}));
 //# sourceMappingURL=all.js.map
