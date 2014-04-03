@@ -5,9 +5,9 @@
 	//to be addable to easily. This is the next step.
 
 
-	var currentEventList = new EventList(0);
 
 	var recording: boolean = false;
+	var currentEventList: EventList;
 
 	export function record() {
 		recording = true;
@@ -134,6 +134,8 @@
 		public getMouseEvents = ():MouseEvent[]=> {
 			return this.mouseEventList;
 		}
+
+		currentEventList = new EventList(0);
 	};
 
 	$(document).keydown(handleKeyPress);

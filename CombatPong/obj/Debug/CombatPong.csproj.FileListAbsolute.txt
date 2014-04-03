@@ -3,4 +3,3 @@ C:\git\CombatPong\CombatPong\bin\CombatPong.dll
 C:\git\CombatPong\CombatPong\bin\CombatPong.pdb
 C:\git\CombatPong\CombatPong\obj\Debug\CombatPong.dll
 C:\git\CombatPong\CombatPong\obj\Debug\CombatPong.pdb
-C:\git\CombatPong\CombatPong\obj\Debug\CombatPong.csprojResolveAssemblyReference.cache

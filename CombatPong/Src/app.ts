@@ -1,6 +1,4 @@
-﻿//make sure this file is ran last!
-
-/// <reference path="game/collision/collisionmanager.ts" />
+﻿/// <reference path="game/collision/collisionmanager.ts" />
 /// <reference path="game/collision/gameobject.ts" />
 /// <reference path="game/collision/interactivegraphic.ts" />
 /// <reference path="game/ball.ts" />
@@ -14,6 +12,10 @@
 /// <reference path="keyman.ts" />
 /// <reference path="peerman.ts" />
 /// <reference path="utilityfunctions.ts" />
+
+//make sure this file is ran last!
+
+
 
 module CombatPong {
     var screen: Screen;

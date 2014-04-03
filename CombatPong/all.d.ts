@@ -261,6 +261,14 @@ declare module Util {
 }
 declare module CombatPong {
 }
+declare module CombatPong {
+    class FrameData {
+        public stageData: StageData;
+        public player1: Player;
+        public player2: Player;
+        constructor(stageData: StageData);
+    }
+}
 declare module Button {
     var buttonMax: number;
     enum Code {
@@ -307,14 +315,6 @@ declare module Button {
         X = 88,
         Y = 89,
         Z = 90,
-    }
-}
-declare module CombatPong {
-    class FrameData {
-        public stageData: StageData;
-        public player1: Player;
-        public player2: Player;
-        constructor(stageData: StageData);
     }
 }
 declare module CombatPong {
@@ -372,5 +372,6 @@ declare module Macro {
         public isKeyUp: (key: Button.Code) => boolean;
         public isKeyReleased: (key: Button.Code) => boolean;
         public getMouseEvents: () => MouseEvent[];
+        public currentEventList: EventList;
     }
 }

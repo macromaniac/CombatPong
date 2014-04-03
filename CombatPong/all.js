@@ -869,7 +869,6 @@ var Util;
     Interface.d.style.margin = "0 auto";
     document.body.appendChild(Interface.d);
 })(Util || (Util = {}));
-//make sure this file is ran last!
 /// <reference path="game/collision/collisionmanager.ts" />
 /// <reference path="game/collision/gameobject.ts" />
 /// <reference path="game/collision/interactivegraphic.ts" />
@@ -884,6 +883,7 @@ var Util;
 /// <reference path="keyman.ts" />
 /// <reference path="peerman.ts" />
 /// <reference path="utilityfunctions.ts" />
+//make sure this file is ran last!
 var CombatPong;
 (function (CombatPong) {
     var screen;
@@ -895,6 +895,22 @@ var CombatPong;
         if (screen)
             screen.fitStageToScreen();
     };
+})(CombatPong || (CombatPong = {}));
+var CombatPong;
+(function (CombatPong) {
+    var FrameData = (function () {
+        //MAKE IT SO THAT EVENT LISTS ARE TIED TO PLAYERS, I.E THEY HAVE PLAYER NUMBER EMBEDED WITHIN
+        //THEM. DO THIS BECAUSE WHEN THE HOST SENDS PLAYER DATA TO CLIENTS THEY NEED TO KNOW
+        //WHAT PLAYER DID WHAT ANYWAYS, ALSO THIS MAKES ORGANIZATION MUCH EASIER
+        function FrameData(stageData) {
+            this.stageData = stageData;
+            this.player1 = new CombatPong.Player();
+            this.player2 = new CombatPong.Player();
+        }
+        return FrameData;
+    })();
+    CombatPong.FrameData = FrameData;
+    ;
 })(CombatPong || (CombatPong = {}));
 var Button;
 (function (Button) {
@@ -947,22 +963,6 @@ var Button;
     var Code = Button.Code;
     ;
 })(Button || (Button = {}));
-var CombatPong;
-(function (CombatPong) {
-    var FrameData = (function () {
-        //MAKE IT SO THAT EVENT LISTS ARE TIED TO PLAYERS, I.E THEY HAVE PLAYER NUMBER EMBEDED WITHIN
-        //THEM. DO THIS BECAUSE WHEN THE HOST SENDS PLAYER DATA TO CLIENTS THEY NEED TO KNOW
-        //WHAT PLAYER DID WHAT ANYWAYS, ALSO THIS MAKES ORGANIZATION MUCH EASIER
-        function FrameData(stageData) {
-            this.stageData = stageData;
-            this.player1 = new CombatPong.Player();
-            this.player2 = new CombatPong.Player();
-        }
-        return FrameData;
-    })();
-    CombatPong.FrameData = FrameData;
-    ;
-})(CombatPong || (CombatPong = {}));
 //Handles input for multiple users
 var CombatPong;
 (function (CombatPong) {
@@ -1005,9 +1005,8 @@ var Macro;
     //Record for one network tick, then call state.update() for your own network tick
     //The problem is there needs to be a list of current event lists, and the list needs
     //to be addable to easily. This is the next step.
-    var currentEventList = new EventList(0);
-
     var recording = false;
+    var currentEventList;
 
     function record() {
         recording = true;
@@ -1142,6 +1141,7 @@ var Macro;
             this.getMouseEvents = function () {
                 return _this.mouseEventList;
             };
+            this.currentEventList = new EventList(0);
             this.generateButtonMapArray();
         }
         State.prototype.generateButtonMapArray = function () {
