@@ -12,6 +12,7 @@
 
 		public peerMan: PeerMan;
 		public game: Game;
+		public netMan: NetMan;
 
 		private findNetworkSettings() {
 

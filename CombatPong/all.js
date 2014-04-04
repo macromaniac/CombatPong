@@ -896,22 +896,6 @@ var CombatPong;
             screen.fitStageToScreen();
     };
 })(CombatPong || (CombatPong = {}));
-var CombatPong;
-(function (CombatPong) {
-    var FrameData = (function () {
-        //MAKE IT SO THAT EVENT LISTS ARE TIED TO PLAYERS, I.E THEY HAVE PLAYER NUMBER EMBEDED WITHIN
-        //THEM. DO THIS BECAUSE WHEN THE HOST SENDS PLAYER DATA TO CLIENTS THEY NEED TO KNOW
-        //WHAT PLAYER DID WHAT ANYWAYS, ALSO THIS MAKES ORGANIZATION MUCH EASIER
-        function FrameData(stageData) {
-            this.stageData = stageData;
-            this.player1 = new CombatPong.Player();
-            this.player2 = new CombatPong.Player();
-        }
-        return FrameData;
-    })();
-    CombatPong.FrameData = FrameData;
-    ;
-})(CombatPong || (CombatPong = {}));
 var Button;
 (function (Button) {
     Button.buttonMax = 100;
@@ -963,6 +947,30 @@ var Button;
     var Code = Button.Code;
     ;
 })(Button || (Button = {}));
+var CombatPong;
+(function (CombatPong) {
+    var DataMessage = (function () {
+        function DataMessage() {
+        }
+        return DataMessage;
+    })();
+})(CombatPong || (CombatPong = {}));
+var CombatPong;
+(function (CombatPong) {
+    var FrameData = (function () {
+        //MAKE IT SO THAT EVENT LISTS ARE TIED TO PLAYERS, I.E THEY HAVE PLAYER NUMBER EMBEDED WITHIN
+        //THEM. DO THIS BECAUSE WHEN THE HOST SENDS PLAYER DATA TO CLIENTS THEY NEED TO KNOW
+        //WHAT PLAYER DID WHAT ANYWAYS, ALSO THIS MAKES ORGANIZATION MUCH EASIER
+        function FrameData(stageData) {
+            this.stageData = stageData;
+            this.player1 = new CombatPong.Player();
+            this.player2 = new CombatPong.Player();
+        }
+        return FrameData;
+    })();
+    CombatPong.FrameData = FrameData;
+    ;
+})(CombatPong || (CombatPong = {}));
 //Handles input for multiple users
 var CombatPong;
 (function (CombatPong) {
@@ -1169,4 +1177,21 @@ var Macro;
         lastY = event.pageY;
     });
 })(Macro || (Macro = {}));
+var CombatPong;
+(function (CombatPong) {
+    var NetMan = (function () {
+        function NetMan(stageData, frameData) {
+            this.frameData = frameData;
+            this.stageData = stageData;
+            this.stageData.netMan = this;
+        }
+        NetMan.prototype.sendMessage = function () {
+        };
+        NetMan.prototype.isHosting = function () {
+        };
+        return NetMan;
+    })();
+    CombatPong.NetMan = NetMan;
+    ;
+})(CombatPong || (CombatPong = {}));
 //# sourceMappingURL=all.js.map
