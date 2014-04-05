@@ -156,7 +156,6 @@ declare module CombatPong {
         public stage: Kinetic.Stage;
         public baseWidth: number;
         public baseHeight: number;
-        public peerMan: PeerMan;
         public game: Game;
         public netMan: NetMan;
         private findNetworkSettings();
@@ -262,6 +261,16 @@ declare module Util {
 }
 declare module CombatPong {
 }
+declare module CombatPong {
+}
+declare module CombatPong {
+    class FrameData {
+        public stageData: StageData;
+        public player1: Player;
+        public player2: Player;
+        constructor(stageData: StageData);
+    }
+}
 declare module Button {
     var buttonMax: number;
     enum Code {
@@ -308,16 +317,6 @@ declare module Button {
         X = 88,
         Y = 89,
         Z = 90,
-    }
-}
-declare module CombatPong {
-}
-declare module CombatPong {
-    class FrameData {
-        public stageData: StageData;
-        public player1: Player;
-        public player2: Player;
-        constructor(stageData: StageData);
     }
 }
 declare module CombatPong {
@@ -382,8 +381,11 @@ declare module CombatPong {
     class NetMan {
         public frameData: FrameData;
         public stageData: StageData;
+        public peerMan: PeerMan;
         constructor(stageData: StageData, frameData: FrameData);
         public sendMessage(): void;
         public isHosting(): void;
+        public beginHosting(onHostingConnection: () => any): void;
+        public beginJoinging(onJoinConnection: () => any, idToJoin: string): void;
     }
 }

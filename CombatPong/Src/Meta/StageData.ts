@@ -10,7 +10,6 @@
         public baseWidth: number;
         public baseHeight: number;
 
-		public peerMan: PeerMan;
 		public game: Game;
 		public netMan: NetMan;
 
@@ -46,7 +45,6 @@
             this.baseWidth = baseWidth;
             this.baseHeight = baseHeight;
 
-			this.peerMan = new PeerMan();
         }
     };
 }

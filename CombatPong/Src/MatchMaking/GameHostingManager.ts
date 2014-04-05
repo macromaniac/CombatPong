@@ -66,7 +66,7 @@ module CombatPong {
 
         public hostGame = (gameID:string) => {
             this.socket.emit('Host Game', gameID);
-			this.stageData.peerMan.beginHosting(this.onHostingConnected);
+			this.stageData.netMan.beginHosting(this.onHostingConnected);
             this.amITryingToHost = true;
         }
         public stopHostingGame = () => {

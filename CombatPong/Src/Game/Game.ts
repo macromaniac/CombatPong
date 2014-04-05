@@ -10,7 +10,6 @@
 			this.stageData = stageData;
 			this.stageData.game = this;
 			//this.world = new World(stageData);
-			this.peerMan = this.stageData.peerMan;
 			this.gameHostingInterface = new GameHostingInterface(stageData);
 
 		}

@@ -297,7 +297,6 @@ var CombatPong;
             this.stageData.game = this;
 
             //this.world = new World(stageData);
-            this.peerMan = this.stageData.peerMan;
             this.gameHostingInterface = new CombatPong.GameHostingInterface(stageData);
         }
         return Game;
@@ -411,7 +410,7 @@ var CombatPong;
             this.gameHostingManager.stopHostingGame();
             this.gameHostingManager.requestList();
 
-            this.stageData.peerMan.beginJoining(this.gameHostingManager.onJoiningConnected, peerIDToJoin);
+            this.stageData.netMan.beginJoinging(this.gameHostingManager.onJoiningConnected, peerIDToJoin);
             //alert("Joined game " + game.toString());
         };
         GameHostingInterface.prototype.displayCouldNotContactServer = function () {
@@ -473,7 +472,7 @@ var CombatPong;
             };
             this.hostGame = function (gameID) {
                 _this.socket.emit('Host Game', gameID);
-                _this.stageData.peerMan.beginHosting(_this.onHostingConnected);
+                _this.stageData.netMan.beginHosting(_this.onHostingConnected);
                 _this.amITryingToHost = true;
             };
             this.stopHostingGame = function () {
@@ -587,8 +586,6 @@ var CombatPong;
 
             this.baseWidth = baseWidth;
             this.baseHeight = baseHeight;
-
-            this.peerMan = new CombatPong.PeerMan();
         }
         StageData.prototype.findNetworkSettings = function () {
             if (navigator.appName === "Netscape")
@@ -896,6 +893,30 @@ var CombatPong;
             screen.fitStageToScreen();
     };
 })(CombatPong || (CombatPong = {}));
+var CombatPong;
+(function (CombatPong) {
+    var DataMessage = (function () {
+        function DataMessage() {
+        }
+        return DataMessage;
+    })();
+})(CombatPong || (CombatPong = {}));
+var CombatPong;
+(function (CombatPong) {
+    var FrameData = (function () {
+        //MAKE IT SO THAT EVENT LISTS ARE TIED TO PLAYERS, I.E THEY HAVE PLAYER NUMBER EMBEDED WITHIN
+        //THEM. DO THIS BECAUSE WHEN THE HOST SENDS PLAYER DATA TO CLIENTS THEY NEED TO KNOW
+        //WHAT PLAYER DID WHAT ANYWAYS, ALSO THIS MAKES ORGANIZATION MUCH EASIER
+        function FrameData(stageData) {
+            this.stageData = stageData;
+            this.player1 = new CombatPong.Player();
+            this.player2 = new CombatPong.Player();
+        }
+        return FrameData;
+    })();
+    CombatPong.FrameData = FrameData;
+    ;
+})(CombatPong || (CombatPong = {}));
 var Button;
 (function (Button) {
     Button.buttonMax = 100;
@@ -947,30 +968,6 @@ var Button;
     var Code = Button.Code;
     ;
 })(Button || (Button = {}));
-var CombatPong;
-(function (CombatPong) {
-    var DataMessage = (function () {
-        function DataMessage() {
-        }
-        return DataMessage;
-    })();
-})(CombatPong || (CombatPong = {}));
-var CombatPong;
-(function (CombatPong) {
-    var FrameData = (function () {
-        //MAKE IT SO THAT EVENT LISTS ARE TIED TO PLAYERS, I.E THEY HAVE PLAYER NUMBER EMBEDED WITHIN
-        //THEM. DO THIS BECAUSE WHEN THE HOST SENDS PLAYER DATA TO CLIENTS THEY NEED TO KNOW
-        //WHAT PLAYER DID WHAT ANYWAYS, ALSO THIS MAKES ORGANIZATION MUCH EASIER
-        function FrameData(stageData) {
-            this.stageData = stageData;
-            this.player1 = new CombatPong.Player();
-            this.player2 = new CombatPong.Player();
-        }
-        return FrameData;
-    })();
-    CombatPong.FrameData = FrameData;
-    ;
-})(CombatPong || (CombatPong = {}));
 //Handles input for multiple users
 var CombatPong;
 (function (CombatPong) {
@@ -1184,10 +1181,17 @@ var CombatPong;
             this.frameData = frameData;
             this.stageData = stageData;
             this.stageData.netMan = this;
+            this.peerMan = new CombatPong.PeerMan();
         }
         NetMan.prototype.sendMessage = function () {
         };
         NetMan.prototype.isHosting = function () {
+        };
+        NetMan.prototype.beginHosting = function (onHostingConnection) {
+            this.peerMan.beginHosting(onHostingConnection);
+        };
+        NetMan.prototype.beginJoinging = function (onJoinConnection, idToJoin) {
+            this.peerMan.beginJoining(onJoinConnection, idToJoin);
         };
         return NetMan;
     })();
