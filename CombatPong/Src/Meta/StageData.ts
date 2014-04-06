@@ -45,6 +45,10 @@
             this.baseWidth = baseWidth;
             this.baseHeight = baseHeight;
 
+            var sd = <StageData>this;
+            console.log(sd);
+            this.netMan = new NetMan(sd);
+
         }
     };
 }

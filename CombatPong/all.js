@@ -112,6 +112,51 @@ var CombatPong;
 })(CombatPong || (CombatPong = {}));
 var CombatPong;
 (function (CombatPong) {
+    var FrameData = (function () {
+        //MAKE IT SO THAT EVENT LISTS ARE TIED TO PLAYERS, I.E THEY HAVE PLAYER NUMBER EMBEDED WITHIN
+        //THEM. DO THIS BECAUSE WHEN THE HOST SENDS PLAYER DATA TO CLIENTS THEY NEED TO KNOW
+        //WHAT PLAYER DID WHAT ANYWAYS, ALSO THIS MAKES ORGANIZATION MUCH EASIER
+        function FrameData(stageData) {
+            this.stageData = stageData;
+            this.player1 = new CombatPong.Player();
+            this.player2 = new CombatPong.Player();
+        }
+        return FrameData;
+    })();
+    CombatPong.FrameData = FrameData;
+    ;
+})(CombatPong || (CombatPong = {}));
+var CombatPong;
+(function (CombatPong) {
+    var NetMan = (function () {
+        function NetMan(stageData) {
+            this.stageData = stageData;
+            this.stageData.netMan = this;
+            this.peerMan = new CombatPong.PeerMan();
+        }
+        NetMan.prototype.sendMessage = function () {
+        };
+        NetMan.prototype.isHosting = function () {
+        };
+        NetMan.prototype.beginHosting = function (onHostingConnection) {
+            this.peerMan.beginHosting(onHostingConnection);
+        };
+        NetMan.prototype.beginJoinging = function (onJoinConnection, idToJoin) {
+            this.peerMan.beginJoining(onJoinConnection, idToJoin);
+        };
+        NetMan.prototype.timeSinceStartMS = function () {
+            return this.peerMan.timeSinceStartMS();
+        };
+        NetMan.prototype.tick = function () {
+            this.peerMan.tick();
+        };
+        return NetMan;
+    })();
+    CombatPong.NetMan = NetMan;
+    ;
+})(CombatPong || (CombatPong = {}));
+var CombatPong;
+(function (CombatPong) {
     var InteractiveGraphic = (function () {
         function InteractiveGraphic(stageData, graphic) {
             this.stageData = stageData;
@@ -258,17 +303,17 @@ var CombatPong;
             var _this = this;
             this.logicFrameLengthInMS = (1 / 48) * 1000;
             this.tick = function () {
-                if (_this.peerMan.timeSinceStartMS() > 0)
+                if (_this.netMan.timeSinceStartMS() > 0)
                     _this.regulatedTick();
             };
             this.tickNumber = 0;
             this.expectedTickNumber = 0;
             this.regulatedTick = function () {
-                _this.expectedTickNumber = _this.peerMan.timeSinceStartMS() / _this.logicFrameLengthInMS;
+                _this.expectedTickNumber = _this.netMan.timeSinceStartMS() / _this.logicFrameLengthInMS;
 
                 while (_this.expectedTickNumber > _this.tickNumber) {
                     if (_this.isNetworkTick(_this.tickNumber))
-                        _this.peerMan.tick();
+                        _this.netMan.tick();
                     if (_this.world)
                         _this.world.tick();
                     _this.tickNumber++;
@@ -295,6 +340,7 @@ var CombatPong;
             };
             this.stageData = stageData;
             this.stageData.game = this;
+            this.netMan = this.stageData.netMan;
 
             //this.world = new World(stageData);
             this.gameHostingInterface = new CombatPong.GameHostingInterface(stageData);
@@ -586,6 +632,10 @@ var CombatPong;
 
             this.baseWidth = baseWidth;
             this.baseHeight = baseHeight;
+
+            var sd = this;
+            console.log(sd);
+            this.netMan = new CombatPong.NetMan(sd);
         }
         StageData.prototype.findNetworkSettings = function () {
             if (navigator.appName === "Netscape")
@@ -868,6 +918,8 @@ var Util;
 })(Util || (Util = {}));
 /// <reference path="game/collision/collisionmanager.ts" />
 /// <reference path="game/collision/gameobject.ts" />
+/// <reference path="framedata.ts" />
+/// <reference path="netman.ts" />
 /// <reference path="game/collision/interactivegraphic.ts" />
 /// <reference path="game/ball.ts" />
 /// <reference path="game/game.ts" />
@@ -892,30 +944,6 @@ var CombatPong;
         if (screen)
             screen.fitStageToScreen();
     };
-})(CombatPong || (CombatPong = {}));
-var CombatPong;
-(function (CombatPong) {
-    var DataMessage = (function () {
-        function DataMessage() {
-        }
-        return DataMessage;
-    })();
-})(CombatPong || (CombatPong = {}));
-var CombatPong;
-(function (CombatPong) {
-    var FrameData = (function () {
-        //MAKE IT SO THAT EVENT LISTS ARE TIED TO PLAYERS, I.E THEY HAVE PLAYER NUMBER EMBEDED WITHIN
-        //THEM. DO THIS BECAUSE WHEN THE HOST SENDS PLAYER DATA TO CLIENTS THEY NEED TO KNOW
-        //WHAT PLAYER DID WHAT ANYWAYS, ALSO THIS MAKES ORGANIZATION MUCH EASIER
-        function FrameData(stageData) {
-            this.stageData = stageData;
-            this.player1 = new CombatPong.Player();
-            this.player2 = new CombatPong.Player();
-        }
-        return FrameData;
-    })();
-    CombatPong.FrameData = FrameData;
-    ;
 })(CombatPong || (CombatPong = {}));
 var Button;
 (function (Button) {
@@ -968,6 +996,14 @@ var Button;
     var Code = Button.Code;
     ;
 })(Button || (Button = {}));
+var CombatPong;
+(function (CombatPong) {
+    var DataMessage = (function () {
+        function DataMessage() {
+        }
+        return DataMessage;
+    })();
+})(CombatPong || (CombatPong = {}));
 //Handles input for multiple users
 var CombatPong;
 (function (CombatPong) {
@@ -1174,28 +1210,4 @@ var Macro;
         lastY = event.pageY;
     });
 })(Macro || (Macro = {}));
-var CombatPong;
-(function (CombatPong) {
-    var NetMan = (function () {
-        function NetMan(stageData, frameData) {
-            this.frameData = frameData;
-            this.stageData = stageData;
-            this.stageData.netMan = this;
-            this.peerMan = new CombatPong.PeerMan();
-        }
-        NetMan.prototype.sendMessage = function () {
-        };
-        NetMan.prototype.isHosting = function () {
-        };
-        NetMan.prototype.beginHosting = function (onHostingConnection) {
-            this.peerMan.beginHosting(onHostingConnection);
-        };
-        NetMan.prototype.beginJoinging = function (onJoinConnection, idToJoin) {
-            this.peerMan.beginJoining(onJoinConnection, idToJoin);
-        };
-        return NetMan;
-    })();
-    CombatPong.NetMan = NetMan;
-    ;
-})(CombatPong || (CombatPong = {}));
 //# sourceMappingURL=all.js.map

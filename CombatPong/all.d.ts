@@ -28,6 +28,27 @@ declare module CombatPong {
     }
 }
 declare module CombatPong {
+    class FrameData {
+        public stageData: StageData;
+        public player1: Player;
+        public player2: Player;
+        constructor(stageData: StageData);
+    }
+}
+declare module CombatPong {
+    class NetMan {
+        public stageData: StageData;
+        public peerMan: PeerMan;
+        constructor(stageData: StageData);
+        public sendMessage(): void;
+        public isHosting(): void;
+        public beginHosting(onHostingConnection: () => any): void;
+        public beginJoinging(onJoinConnection: () => any, idToJoin: string): void;
+        public timeSinceStartMS(): number;
+        public tick(): void;
+    }
+}
+declare module CombatPong {
     class InteractiveGraphic {
         public stageData: StageData;
         public graphic: Kinetic.Group;
@@ -61,7 +82,7 @@ declare module CombatPong {
         public logicFrameLengthInMS: number;
         private stageData;
         private world;
-        private peerMan;
+        private netMan;
         private gameHostingInterface;
         constructor(stageData: StageData);
         public tick: () => void;
@@ -261,16 +282,6 @@ declare module Util {
 }
 declare module CombatPong {
 }
-declare module CombatPong {
-}
-declare module CombatPong {
-    class FrameData {
-        public stageData: StageData;
-        public player1: Player;
-        public player2: Player;
-        constructor(stageData: StageData);
-    }
-}
 declare module Button {
     var buttonMax: number;
     enum Code {
@@ -318,6 +329,8 @@ declare module Button {
         Y = 89,
         Z = 90,
     }
+}
+declare module CombatPong {
 }
 declare module CombatPong {
     class InputMan {
@@ -375,17 +388,5 @@ declare module Macro {
         public isKeyReleased: (key: Button.Code) => boolean;
         public getMouseEvents: () => MouseEvent[];
         public currentEventList: EventList;
-    }
-}
-declare module CombatPong {
-    class NetMan {
-        public frameData: FrameData;
-        public stageData: StageData;
-        public peerMan: PeerMan;
-        constructor(stageData: StageData, frameData: FrameData);
-        public sendMessage(): void;
-        public isHosting(): void;
-        public beginHosting(onHostingConnection: () => any): void;
-        public beginJoinging(onJoinConnection: () => any, idToJoin: string): void;
     }
 }

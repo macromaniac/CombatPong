@@ -1,10 +1,8 @@
 ﻿module CombatPong {
 	export class NetMan {
-		frameData: FrameData;
 		stageData: StageData;
 		peerMan: PeerMan;
-		constructor(stageData: StageData, frameData: FrameData) {
-			this.frameData = frameData;
+		constructor(stageData: StageData) {
 			this.stageData = stageData;
 			this.stageData.netMan = this;
 			this.peerMan = new PeerMan();
@@ -20,5 +18,11 @@
 		public beginJoinging(onJoinConnection: () => any, idToJoin: string) {
 			this.peerMan.beginJoining(onJoinConnection,idToJoin);
 		}
+        public timeSinceStartMS(): number {
+            return this.peerMan.timeSinceStartMS();
+        }
+        public tick() {
+            this.peerMan.tick();
+        }
 	};
 }
