@@ -45,6 +45,8 @@
             this.baseWidth = baseWidth;
             this.baseHeight = baseHeight;
 
+			this.netMan = new NetMan(this, new FrameData(this));
+
         }
     };
 }

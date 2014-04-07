@@ -8,9 +8,11 @@
 /// <reference path="matchmaking/gamehostinginterface.ts" />
 /// <reference path="matchmaking/gamehostingmanager.ts" />
 /// <reference path="meta/screen.ts" />
+/// <reference path="netman.ts" />
+/// <reference path="framedata.ts" />
+/// <reference path="peerman.ts" />
 /// <reference path="meta/stagedata.ts" />
 /// <reference path="keyman.ts" />
-/// <reference path="peerman.ts" />
 /// <reference path="utilityfunctions.ts" />
 
 //make sure this file is ran last!

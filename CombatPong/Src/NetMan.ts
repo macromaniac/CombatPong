@@ -20,5 +20,11 @@
 		public beginJoinging(onJoinConnection: () => any, idToJoin: string) {
 			this.peerMan.beginJoining(onJoinConnection,idToJoin);
 		}
+		public timeSinceStartMS = ():number => {
+			return this.peerMan.timeSinceStartMS();
+		}
+		public tick = () => {
+			this.peerMan.tick();
+		}
 	};
 }

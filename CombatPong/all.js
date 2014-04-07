@@ -258,17 +258,17 @@ var CombatPong;
             var _this = this;
             this.logicFrameLengthInMS = (1 / 48) * 1000;
             this.tick = function () {
-                if (_this.peerMan.timeSinceStartMS() > 0)
+                if (_this.netMan.timeSinceStartMS() > 0)
                     _this.regulatedTick();
             };
             this.tickNumber = 0;
             this.expectedTickNumber = 0;
             this.regulatedTick = function () {
-                _this.expectedTickNumber = _this.peerMan.timeSinceStartMS() / _this.logicFrameLengthInMS;
+                _this.expectedTickNumber = _this.netMan.timeSinceStartMS() / _this.logicFrameLengthInMS;
 
                 while (_this.expectedTickNumber > _this.tickNumber) {
                     if (_this.isNetworkTick(_this.tickNumber))
-                        _this.peerMan.tick();
+                        _this.netMan.tick();
                     if (_this.world)
                         _this.world.tick();
                     _this.tickNumber++;
@@ -295,6 +295,7 @@ var CombatPong;
             };
             this.stageData = stageData;
             this.stageData.game = this;
+            this.netMan = stageData.netMan;
 
             //this.world = new World(stageData);
             this.gameHostingInterface = new CombatPong.GameHostingInterface(stageData);
@@ -568,6 +569,115 @@ var CombatPong;
 })(CombatPong || (CombatPong = {}));
 var CombatPong;
 (function (CombatPong) {
+    var NetMan = (function () {
+        function NetMan(stageData, frameData) {
+            var _this = this;
+            this.timeSinceStartMS = function () {
+                return _this.peerMan.timeSinceStartMS();
+            };
+            this.tick = function () {
+                _this.peerMan.tick();
+            };
+            this.frameData = frameData;
+            this.stageData = stageData;
+            this.stageData.netMan = this;
+            this.peerMan = new CombatPong.PeerMan();
+        }
+        NetMan.prototype.sendMessage = function () {
+        };
+        NetMan.prototype.isHosting = function () {
+        };
+        NetMan.prototype.beginHosting = function (onHostingConnection) {
+            this.peerMan.beginHosting(onHostingConnection);
+        };
+        NetMan.prototype.beginJoinging = function (onJoinConnection, idToJoin) {
+            this.peerMan.beginJoining(onJoinConnection, idToJoin);
+        };
+        return NetMan;
+    })();
+    CombatPong.NetMan = NetMan;
+    ;
+})(CombatPong || (CombatPong = {}));
+var CombatPong;
+(function (CombatPong) {
+    var FrameData = (function () {
+        //MAKE IT SO THAT EVENT LISTS ARE TIED TO PLAYERS, I.E THEY HAVE PLAYER NUMBER EMBEDED WITHIN
+        //THEM. DO THIS BECAUSE WHEN THE HOST SENDS PLAYER DATA TO CLIENTS THEY NEED TO KNOW
+        //WHAT PLAYER DID WHAT ANYWAYS, ALSO THIS MAKES ORGANIZATION MUCH EASIER
+        function FrameData(stageData) {
+            this.stageData = stageData;
+            this.player1 = new CombatPong.Player();
+            this.player2 = new CombatPong.Player();
+        }
+        return FrameData;
+    })();
+    CombatPong.FrameData = FrameData;
+    ;
+})(CombatPong || (CombatPong = {}));
+var CombatPong;
+(function (CombatPong) {
+    (function (HostingState) {
+        HostingState[HostingState["Host"] = 0] = "Host";
+        HostingState[HostingState["Client"] = 1] = "Client";
+        HostingState[HostingState["Neither"] = 2] = "Neither";
+    })(CombatPong.HostingState || (CombatPong.HostingState = {}));
+    var HostingState = CombatPong.HostingState;
+    ;
+    var PeerMan = (function () {
+        function PeerMan() {
+            var _this = this;
+            this.hostingState = 2 /* Neither */;
+            this.timeStart = -1;
+            this.generatePeer = function () {
+                _this.hostingState = 2 /* Neither */;
+                _this.peer = new Peer(Util.Conf.uniqueID, { host: 'localhost', port: 9000, path: '/', key: 'peerjs' });
+            };
+            this.networkTickCount = 0;
+            this.tick = function () {
+                _this.networkTickCount++;
+            };
+            this.beginJoining = function (onJoinConnection, idToJoin) {
+                var conn = _this.peer.connect(idToJoin);
+                conn.on('open', function () {
+                    onJoinConnection(); //trigger callback
+                    _this.hostingState = 1 /* Client */;
+                    _this.zeroOutTheTime(); //Syncs time between client and host
+                });
+                conn.on('data', function (data) {
+                    alert(data);
+                });
+            };
+            this.beginHosting = function (onHostingConnection) {
+                _this.peer.on('connection', function (dataConnection) {
+                    var conn = dataConnection;
+                    conn.on('open', function () {
+                        //conn.send('HELLO PERSON :]');
+                        onHostingConnection(); //trigger callback
+                        _this.hostingState = 0 /* Host */;
+                        _this.zeroOutTheTime(); //Syncs time between client and host
+                    });
+                });
+            };
+            this.zeroOutTheTime = function () {
+                _this.timeStart = (new Date()).getTime();
+            };
+            this.timeSinceStartMS = function () {
+                if (_this.timeStart < 0)
+                    return _this.timeStart;
+
+                return (new Date()).getTime() - _this.timeStart;
+            };
+            this.generatePeer();
+        }
+        PeerMan.defaultNetworkFrameLengthInMS = (1 / 8) * 1000;
+        PeerMan.networkPaddingFrameNumber = 2;
+        return PeerMan;
+    })();
+    CombatPong.PeerMan = PeerMan;
+    ;
+})(CombatPong || (CombatPong = {}));
+var CombatPong;
+(function (CombatPong) {
     var StageData = (function () {
         function StageData(stage, baseWidth, baseHeight) {
             this.isNetEnabled = true;
@@ -586,6 +696,8 @@ var CombatPong;
 
             this.baseWidth = baseWidth;
             this.baseHeight = baseHeight;
+
+            this.netMan = new CombatPong.NetMan(this, new CombatPong.FrameData(this));
         }
         StageData.prototype.findNetworkSettings = function () {
             if (navigator.appName === "Netscape")
@@ -686,68 +798,6 @@ var MWG;
     document.onkeyup = KeyManUtil.keyUpListener;
     document.onkeydown = KeyManUtil.keyDownListener;
 })(MWG || (MWG = {}));
-var CombatPong;
-(function (CombatPong) {
-    (function (HostingState) {
-        HostingState[HostingState["Host"] = 0] = "Host";
-        HostingState[HostingState["Client"] = 1] = "Client";
-        HostingState[HostingState["Neither"] = 2] = "Neither";
-    })(CombatPong.HostingState || (CombatPong.HostingState = {}));
-    var HostingState = CombatPong.HostingState;
-    ;
-    var PeerMan = (function () {
-        function PeerMan() {
-            var _this = this;
-            this.hostingState = 2 /* Neither */;
-            this.timeStart = -1;
-            this.generatePeer = function () {
-                _this.hostingState = 2 /* Neither */;
-                _this.peer = new Peer(Util.Conf.uniqueID, { host: 'localhost', port: 9000, path: '/', key: 'peerjs' });
-            };
-            this.networkTickCount = 0;
-            this.tick = function () {
-                _this.networkTickCount++;
-            };
-            this.beginJoining = function (onJoinConnection, idToJoin) {
-                var conn = _this.peer.connect(idToJoin);
-                conn.on('open', function () {
-                    onJoinConnection(); //trigger callback
-                    _this.hostingState = 1 /* Client */;
-                    _this.zeroOutTheTime(); //Syncs time between client and host
-                });
-                conn.on('data', function (data) {
-                    alert(data);
-                });
-            };
-            this.beginHosting = function (onHostingConnection) {
-                _this.peer.on('connection', function (dataConnection) {
-                    var conn = dataConnection;
-                    conn.on('open', function () {
-                        //conn.send('HELLO PERSON :]');
-                        onHostingConnection(); //trigger callback
-                        _this.hostingState = 0 /* Host */;
-                        _this.zeroOutTheTime(); //Syncs time between client and host
-                    });
-                });
-            };
-            this.zeroOutTheTime = function () {
-                _this.timeStart = (new Date()).getTime();
-            };
-            this.timeSinceStartMS = function () {
-                if (_this.timeStart < 0)
-                    return _this.timeStart;
-
-                return (new Date()).getTime() - _this.timeStart;
-            };
-            this.generatePeer();
-        }
-        PeerMan.defaultNetworkFrameLengthInMS = (1 / 8) * 1000;
-        PeerMan.networkPaddingFrameNumber = 2;
-        return PeerMan;
-    })();
-    CombatPong.PeerMan = PeerMan;
-    ;
-})(CombatPong || (CombatPong = {}));
 var Util;
 (function (Util) {
     var Conf = (function () {
@@ -876,9 +926,11 @@ var Util;
 /// <reference path="matchmaking/gamehostinginterface.ts" />
 /// <reference path="matchmaking/gamehostingmanager.ts" />
 /// <reference path="meta/screen.ts" />
+/// <reference path="netman.ts" />
+/// <reference path="framedata.ts" />
+/// <reference path="peerman.ts" />
 /// <reference path="meta/stagedata.ts" />
 /// <reference path="keyman.ts" />
-/// <reference path="peerman.ts" />
 /// <reference path="utilityfunctions.ts" />
 //make sure this file is ran last!
 var CombatPong;
@@ -892,30 +944,6 @@ var CombatPong;
         if (screen)
             screen.fitStageToScreen();
     };
-})(CombatPong || (CombatPong = {}));
-var CombatPong;
-(function (CombatPong) {
-    var DataMessage = (function () {
-        function DataMessage() {
-        }
-        return DataMessage;
-    })();
-})(CombatPong || (CombatPong = {}));
-var CombatPong;
-(function (CombatPong) {
-    var FrameData = (function () {
-        //MAKE IT SO THAT EVENT LISTS ARE TIED TO PLAYERS, I.E THEY HAVE PLAYER NUMBER EMBEDED WITHIN
-        //THEM. DO THIS BECAUSE WHEN THE HOST SENDS PLAYER DATA TO CLIENTS THEY NEED TO KNOW
-        //WHAT PLAYER DID WHAT ANYWAYS, ALSO THIS MAKES ORGANIZATION MUCH EASIER
-        function FrameData(stageData) {
-            this.stageData = stageData;
-            this.player1 = new CombatPong.Player();
-            this.player2 = new CombatPong.Player();
-        }
-        return FrameData;
-    })();
-    CombatPong.FrameData = FrameData;
-    ;
 })(CombatPong || (CombatPong = {}));
 var Button;
 (function (Button) {
@@ -968,6 +996,14 @@ var Button;
     var Code = Button.Code;
     ;
 })(Button || (Button = {}));
+var CombatPong;
+(function (CombatPong) {
+    var DataMessage = (function () {
+        function DataMessage() {
+        }
+        return DataMessage;
+    })();
+})(CombatPong || (CombatPong = {}));
 //Handles input for multiple users
 var CombatPong;
 (function (CombatPong) {
@@ -1174,28 +1210,4 @@ var Macro;
         lastY = event.pageY;
     });
 })(Macro || (Macro = {}));
-var CombatPong;
-(function (CombatPong) {
-    var NetMan = (function () {
-        function NetMan(stageData, frameData) {
-            this.frameData = frameData;
-            this.stageData = stageData;
-            this.stageData.netMan = this;
-            this.peerMan = new CombatPong.PeerMan();
-        }
-        NetMan.prototype.sendMessage = function () {
-        };
-        NetMan.prototype.isHosting = function () {
-        };
-        NetMan.prototype.beginHosting = function (onHostingConnection) {
-            this.peerMan.beginHosting(onHostingConnection);
-        };
-        NetMan.prototype.beginJoinging = function (onJoinConnection, idToJoin) {
-            this.peerMan.beginJoining(onJoinConnection, idToJoin);
-        };
-        return NetMan;
-    })();
-    CombatPong.NetMan = NetMan;
-    ;
-})(CombatPong || (CombatPong = {}));
 //# sourceMappingURL=all.js.map

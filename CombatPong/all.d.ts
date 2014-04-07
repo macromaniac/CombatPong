@@ -61,8 +61,8 @@ declare module CombatPong {
         public logicFrameLengthInMS: number;
         private stageData;
         private world;
-        private peerMan;
         private gameHostingInterface;
+        private netMan;
         constructor(stageData: StageData);
         public tick: () => void;
         public tickNumber: number;
@@ -148,6 +148,50 @@ declare module CombatPong {
     }
 }
 declare module CombatPong {
+    class NetMan {
+        public frameData: FrameData;
+        public stageData: StageData;
+        public peerMan: PeerMan;
+        constructor(stageData: StageData, frameData: FrameData);
+        public sendMessage(): void;
+        public isHosting(): void;
+        public beginHosting(onHostingConnection: () => any): void;
+        public beginJoinging(onJoinConnection: () => any, idToJoin: string): void;
+        public timeSinceStartMS: () => number;
+        public tick: () => void;
+    }
+}
+declare module CombatPong {
+    class FrameData {
+        public stageData: StageData;
+        public player1: Player;
+        public player2: Player;
+        constructor(stageData: StageData);
+    }
+}
+declare module CombatPong {
+    enum HostingState {
+        Host = 0,
+        Client = 1,
+        Neither = 2,
+    }
+    class PeerMan {
+        static defaultNetworkFrameLengthInMS: number;
+        static networkPaddingFrameNumber: number;
+        public hostingState: HostingState;
+        public timeStart: number;
+        private peer;
+        private generatePeer;
+        constructor();
+        public networkTickCount: number;
+        public tick: () => void;
+        public beginJoining: (onJoinConnection: () => any, idToJoin: string) => void;
+        public beginHosting: (onHostingConnection: () => any) => void;
+        private zeroOutTheTime;
+        public timeSinceStartMS: () => number;
+    }
+}
+declare module CombatPong {
     class StageData {
         public isNetEnabled: boolean;
         public UI: Kinetic.Layer;
@@ -212,28 +256,6 @@ declare module MWG {
         static isButtonDown(buttonCode: ButtonCode): boolean;
     }
 }
-declare module CombatPong {
-    enum HostingState {
-        Host = 0,
-        Client = 1,
-        Neither = 2,
-    }
-    class PeerMan {
-        static defaultNetworkFrameLengthInMS: number;
-        static networkPaddingFrameNumber: number;
-        public hostingState: HostingState;
-        public timeStart: number;
-        private peer;
-        private generatePeer;
-        constructor();
-        public networkTickCount: number;
-        public tick: () => void;
-        public beginJoining: (onJoinConnection: () => any, idToJoin: string) => void;
-        public beginHosting: (onHostingConnection: () => any) => void;
-        private zeroOutTheTime;
-        public timeSinceStartMS: () => number;
-    }
-}
 declare module Util {
     class Conf {
         static hostURL: string;
@@ -260,16 +282,6 @@ declare module Util {
     }
 }
 declare module CombatPong {
-}
-declare module CombatPong {
-}
-declare module CombatPong {
-    class FrameData {
-        public stageData: StageData;
-        public player1: Player;
-        public player2: Player;
-        constructor(stageData: StageData);
-    }
 }
 declare module Button {
     var buttonMax: number;
@@ -318,6 +330,8 @@ declare module Button {
         Y = 89,
         Z = 90,
     }
+}
+declare module CombatPong {
 }
 declare module CombatPong {
     class InputMan {
@@ -375,17 +389,5 @@ declare module Macro {
         public isKeyReleased: (key: Button.Code) => boolean;
         public getMouseEvents: () => MouseEvent[];
         public currentEventList: EventList;
-    }
-}
-declare module CombatPong {
-    class NetMan {
-        public frameData: FrameData;
-        public stageData: StageData;
-        public peerMan: PeerMan;
-        constructor(stageData: StageData, frameData: FrameData);
-        public sendMessage(): void;
-        public isHosting(): void;
-        public beginHosting(onHostingConnection: () => any): void;
-        public beginJoinging(onJoinConnection: () => any, idToJoin: string): void;
     }
 }

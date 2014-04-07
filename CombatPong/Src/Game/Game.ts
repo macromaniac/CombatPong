@@ -4,27 +4,28 @@
 
 		private stageData: StageData;
 		private world: World;
-		private peerMan: PeerMan;
 		private gameHostingInterface: GameHostingInterface;
+		private netMan: NetMan;
 		constructor(stageData: StageData) {
 			this.stageData = stageData;
 			this.stageData.game = this;
+			this.netMan = stageData.netMan;
 			//this.world = new World(stageData);
 			this.gameHostingInterface = new GameHostingInterface(stageData);
 
 		}
 		public tick = () => {
-			if (this.peerMan.timeSinceStartMS() > 0)
+			if (this.netMan.timeSinceStartMS() > 0)
 				this.regulatedTick();
 		}
 		tickNumber: number = 0;
 		expectedTickNumber: number = 0;
 		private regulatedTick = () => {
-			this.expectedTickNumber = this.peerMan.timeSinceStartMS() / this.logicFrameLengthInMS;
+			this.expectedTickNumber = this.netMan.timeSinceStartMS() / this.logicFrameLengthInMS;
 
 			while (this.expectedTickNumber > this.tickNumber) {
 				if (this.isNetworkTick(this.tickNumber))
-					this.peerMan.tick();
+					this.netMan.tick();
 				if(this.world)
 					this.world.tick();
 				this.tickNumber++;
