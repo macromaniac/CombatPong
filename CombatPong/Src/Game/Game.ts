@@ -4,20 +4,12 @@
 
 		private stageData: StageData;
 		private world: World;
-<<<<<<< HEAD
-=======
-        private netMan: NetMan;
->>>>>>> a6445a078907353a5e7306e8854783315e32face
 		private gameHostingInterface: GameHostingInterface;
 		private netMan: NetMan;
 		constructor(stageData: StageData) {
 			this.stageData = stageData;
 			this.stageData.game = this;
-<<<<<<< HEAD
 			this.netMan = stageData.netMan;
-=======
-            this.netMan = this.stageData.netMan; 
->>>>>>> a6445a078907353a5e7306e8854783315e32face
 			//this.world = new World(stageData);
 			this.gameHostingInterface = new GameHostingInterface(stageData);
 
