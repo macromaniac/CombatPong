@@ -130,6 +130,103 @@ declare module CombatPong {
         public isHosting: () => boolean;
     }
 }
+declare module Button {
+    var buttonMax: number;
+    enum Code {
+        Shift = 16,
+        Ctrl = 17,
+        Alt = 18,
+        Left = 37,
+        Up = 38,
+        Right = 39,
+        Down = 40,
+        Zero = 48,
+        One = 49,
+        Two = 50,
+        Three = 51,
+        Four = 52,
+        Five = 53,
+        Six = 54,
+        Seven = 55,
+        Eight = 56,
+        Nine = 57,
+        A = 65,
+        B = 66,
+        C = 67,
+        D = 68,
+        E = 69,
+        F = 70,
+        G = 71,
+        H = 72,
+        I = 73,
+        J = 74,
+        K = 75,
+        L = 76,
+        M = 77,
+        N = 78,
+        O = 79,
+        P = 80,
+        Q = 81,
+        R = 82,
+        S = 83,
+        T = 84,
+        U = 85,
+        V = 86,
+        W = 87,
+        X = 88,
+        Y = 89,
+        Z = 90,
+    }
+}
+declare module Macro {
+    var currentState: State;
+    function record(): void;
+    function stopRecording(): void;
+    class Event {
+        public execute: (state: State) => void;
+        public isKey(): boolean;
+    }
+    class KeyEvent extends Event {
+        public kCode: number;
+        public isKeyDown: boolean;
+        constructor(keyCode: number, isKeyDown: boolean);
+        public execute: (state: State) => void;
+        public isKey(): boolean;
+    }
+    class MouseEvent extends Event {
+        public x: number;
+        public y: number;
+        public mouseClick: boolean;
+        constructor(x: number, y: number, mouseClick?: boolean);
+        public isKey(): boolean;
+        public execute: (state: State) => void;
+    }
+    class EventList {
+        public frameAt: number;
+        constructor(frameAt: number);
+        public list: Event[];
+        private nextEventList;
+        public immediatelyAddEvent(e: Event): void;
+        public addEvent(e: Event): void;
+        public getNextEventList(): EventList;
+    }
+    class State {
+        public buttonDownBooleans: boolean[];
+        public wasKeyReleased: boolean[];
+        public mouseEventList: MouseEvent[];
+        public eventList: EventList;
+        constructor();
+        private generateButtonMapArray();
+        private undoReleaseKeys();
+        public updateFromEventList: (eventList: EventList) => void;
+        public update: () => void;
+        public isKeyDown: (key: Button.Code) => boolean;
+        public isKeyUp: (key: Button.Code) => boolean;
+        public isKeyReleased: (key: Button.Code) => boolean;
+        public getMouseEvents: () => MouseEvent[];
+        public getFrame: () => number;
+    }
+}
 declare module CombatPong {
     class Screen {
         public stageData: StageData;
@@ -154,9 +251,11 @@ declare module CombatPong {
         public peerMan: PeerMan;
         constructor(stageData: StageData, frameData: FrameData);
         public sendMessage(): void;
-        public isHosting(): void;
+        public getHostingState: () => HostingState;
         public beginHosting(onHostingConnection: () => any): void;
-        public beginJoinging(onJoinConnection: () => any, idToJoin: string): void;
+        public beginJoining(onJoinConnection: () => any, idToJoin: string): void;
+        public onHostingConnection: () => void;
+        public onJoiningConnection: () => void;
         public timeSinceStartMS: () => number;
         public tick: () => void;
     }
@@ -283,54 +382,6 @@ declare module Util {
 }
 declare module CombatPong {
 }
-declare module Button {
-    var buttonMax: number;
-    enum Code {
-        Shift = 16,
-        Ctrl = 17,
-        Alt = 18,
-        Left = 37,
-        Up = 38,
-        Right = 39,
-        Down = 40,
-        Zero = 48,
-        One = 49,
-        Two = 50,
-        Three = 51,
-        Four = 52,
-        Five = 53,
-        Six = 54,
-        Seven = 55,
-        Eight = 56,
-        Nine = 57,
-        A = 65,
-        B = 66,
-        C = 67,
-        D = 68,
-        E = 69,
-        F = 70,
-        G = 71,
-        H = 72,
-        I = 73,
-        J = 74,
-        K = 75,
-        L = 76,
-        M = 77,
-        N = 78,
-        O = 79,
-        P = 80,
-        Q = 81,
-        R = 82,
-        S = 83,
-        T = 84,
-        U = 85,
-        V = 86,
-        W = 87,
-        X = 88,
-        Y = 89,
-        Z = 90,
-    }
-}
 declare module CombatPong {
 }
 declare module CombatPong {
@@ -343,51 +394,5 @@ declare module CombatPong {
         constructor();
         public tryToIncreaseState: () => boolean;
         public addEventList: (eventList: Macro.EventList) => void;
-    }
-}
-declare module Macro {
-    function record(): void;
-    function stopRecording(): void;
-    class KeyEvent extends Event {
-        public keyCode: number;
-        public isKeyDown: boolean;
-        constructor(keyCode: number, isKeyDown: boolean);
-        public execute(state: State): void;
-    }
-    class MouseEvent extends Event {
-        public x: number;
-        public y: number;
-        public mouseClick: boolean;
-        constructor(x: number, y: number, mouseClick?: boolean);
-        public execute(state: State): void;
-    }
-    class Event {
-        public execute(state: State): void;
-    }
-    class EventList {
-        public frameAt: number;
-        constructor(frameAt: number);
-        public list: Event[];
-        private nextEventList;
-        public addEvent(e: Event): void;
-        public immediatelyAddEvent(e: Event): void;
-        public getNextEventList(): EventList;
-    }
-    class State {
-        public buttonDownBooleans: boolean[];
-        public wasKeyReleased: boolean[];
-        public mouseEventList: MouseEvent[];
-        private eventList;
-        constructor();
-        private generateButtonMapArray();
-        private undoReleaseKeys();
-        public updateFromEventList: (eventList: EventList) => void;
-        public updateFromRecording: () => void;
-        public update: () => void;
-        public isKeyDown: (key: Button.Code) => boolean;
-        public isKeyUp: (key: Button.Code) => boolean;
-        public isKeyReleased: (key: Button.Code) => boolean;
-        public getMouseEvents: () => MouseEvent[];
-        public currentEventList: EventList;
     }
 }

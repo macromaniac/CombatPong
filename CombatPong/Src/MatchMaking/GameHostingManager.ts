@@ -51,32 +51,34 @@ module CombatPong {
 		}
 
 		public onHostingConnected = () => {
-				this.stageData.game.beginGameAsClient();
-				this.removeMM();
+			this.stageData.game.beginGameAsClient();
+			this.removeMM();
+			this.stageData.netMan.onHostingConnection();
 		}
-		public onJoiningConnected = ()=> {
-				this.stageData.game.beginGameAsHost();
-				this.removeMM();
+		public onJoiningConnected = () => {
+			this.stageData.game.beginGameAsHost();
+			this.removeMM();
+			this.stageData.netMan.onJoiningConnection();
 		}
-		private removeMM () {
+		private removeMM() {
 			this.socket.emit('disconnect', {});
 			Util.Interface.clearInterface();
 			//SHOULD I REMOVE REFERENCES SO THIS CAN BE GARBAGE COLLECTED? IDTS
 		}
 
-        public hostGame = (gameID:string) => {
-            this.socket.emit('Host Game', gameID);
+        public hostGame = (gameID: string) => {
+			this.socket.emit('Host Game', gameID);
 			this.stageData.netMan.beginHosting(this.onHostingConnected);
-            this.amITryingToHost = true;
-        }
+			this.amITryingToHost = true;
+		}
         public stopHostingGame = () => {
-            this.socket.emit('Stop Hosting Game', {});
-            this.amITryingToHost = false;
-        }
+			this.socket.emit('Stop Hosting Game', {});
+			this.amITryingToHost = false;
+		}
 
         public isHosting = (): boolean => {
-            return this.amITryingToHost;
-        }
+			return this.amITryingToHost;
+		}
 
 	}
 }

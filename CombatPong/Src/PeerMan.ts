@@ -28,9 +28,9 @@
 		public beginJoining = (onJoinConnection: () => any, idToJoin: string) => {
 			var conn = this.peer.connect(idToJoin);
 			conn.on('open', () => {
-				onJoinConnection(); //trigger callback
 				this.hostingState = HostingState.Client;
 				this.zeroOutTheTime(); //Syncs time between client and host
+				onJoinConnection(); //trigger callback
 			});
 			conn.on('data', (data) => {
 				alert(data);
@@ -42,9 +42,9 @@
 				var conn = <DataConnection>dataConnection;
 				conn.on('open', () => {
 					//conn.send('HELLO PERSON :]');
-					onHostingConnection(); //trigger callback
 					this.hostingState = HostingState.Host;
 					this.zeroOutTheTime(); //Syncs time between client and host
+					onHostingConnection(); //trigger callback
 				});
 			});
 		}

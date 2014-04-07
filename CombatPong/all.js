@@ -411,7 +411,7 @@ var CombatPong;
             this.gameHostingManager.stopHostingGame();
             this.gameHostingManager.requestList();
 
-            this.stageData.netMan.beginJoinging(this.gameHostingManager.onJoiningConnected, peerIDToJoin);
+            this.stageData.netMan.beginJoining(this.gameHostingManager.onJoiningConnected, peerIDToJoin);
             //alert("Joined game " + game.toString());
         };
         GameHostingInterface.prototype.displayCouldNotContactServer = function () {
@@ -466,10 +466,12 @@ var CombatPong;
             this.onHostingConnected = function () {
                 _this.stageData.game.beginGameAsClient();
                 _this.removeMM();
+                _this.stageData.netMan.onHostingConnection();
             };
             this.onJoiningConnected = function () {
                 _this.stageData.game.beginGameAsHost();
                 _this.removeMM();
+                _this.stageData.netMan.onJoiningConnection();
             };
             this.hostGame = function (gameID) {
                 _this.socket.emit('Host Game', gameID);
@@ -497,6 +499,242 @@ var CombatPong;
     })();
     CombatPong.GameHostingManager = GameHostingManager;
 })(CombatPong || (CombatPong = {}));
+var Button;
+(function (Button) {
+    Button.buttonMax = 100;
+    (function (Code) {
+        Code[Code["Shift"] = 16] = "Shift";
+        Code[Code["Ctrl"] = 17] = "Ctrl";
+        Code[Code["Alt"] = 18] = "Alt";
+        Code[Code["Left"] = 37] = "Left";
+        Code[Code["Up"] = 38] = "Up";
+        Code[Code["Right"] = 39] = "Right";
+        Code[Code["Down"] = 40] = "Down";
+        Code[Code["Zero"] = 48] = "Zero";
+        Code[Code["One"] = 49] = "One";
+        Code[Code["Two"] = 50] = "Two";
+        Code[Code["Three"] = 51] = "Three";
+        Code[Code["Four"] = 52] = "Four";
+        Code[Code["Five"] = 53] = "Five";
+        Code[Code["Six"] = 54] = "Six";
+        Code[Code["Seven"] = 55] = "Seven";
+        Code[Code["Eight"] = 56] = "Eight";
+        Code[Code["Nine"] = 57] = "Nine";
+        Code[Code["A"] = 65] = "A";
+        Code[Code["B"] = 66] = "B";
+        Code[Code["C"] = 67] = "C";
+        Code[Code["D"] = 68] = "D";
+        Code[Code["E"] = 69] = "E";
+        Code[Code["F"] = 70] = "F";
+        Code[Code["G"] = 71] = "G";
+        Code[Code["H"] = 72] = "H";
+        Code[Code["I"] = 73] = "I";
+        Code[Code["J"] = 74] = "J";
+        Code[Code["K"] = 75] = "K";
+        Code[Code["L"] = 76] = "L";
+        Code[Code["M"] = 77] = "M";
+        Code[Code["N"] = 78] = "N";
+        Code[Code["O"] = 79] = "O";
+        Code[Code["P"] = 80] = "P";
+        Code[Code["Q"] = 81] = "Q";
+        Code[Code["R"] = 82] = "R";
+        Code[Code["S"] = 83] = "S";
+        Code[Code["T"] = 84] = "T";
+        Code[Code["U"] = 85] = "U";
+        Code[Code["V"] = 86] = "V";
+        Code[Code["W"] = 87] = "W";
+        Code[Code["X"] = 88] = "X";
+        Code[Code["Y"] = 89] = "Y";
+        Code[Code["Z"] = 90] = "Z";
+    })(Button.Code || (Button.Code = {}));
+    var Code = Button.Code;
+    ;
+})(Button || (Button = {}));
+var Macro;
+(function (Macro) {
+    //How to use:
+    //Record for one network tick, then call state.update() for your own network tick
+    //The problem is there needs to be a list of current event lists, and the list needs
+    //to be addable to easily. This is the next step.
+    var recording = false;
+    Macro.currentState;
+
+    function record() {
+        recording = true;
+    }
+    Macro.record = record;
+    function stopRecording() {
+        recording = false;
+    }
+    Macro.stopRecording = stopRecording;
+
+    var Event = (function () {
+        function Event() {
+            this.execute = function (state) {
+            };
+        }
+        Event.prototype.isKey = function () {
+            return false;
+        };
+        return Event;
+    })();
+    Macro.Event = Event;
+    ;
+
+    var KeyEvent = (function (_super) {
+        __extends(KeyEvent, _super);
+        function KeyEvent(keyCode, isKeyDown) {
+            var _this = this;
+            _super.call(this);
+            this.execute = function (state) {
+                if (_this.kCode < Button.buttonMax) {
+                    state.buttonDownBooleans[_this.kCode] = _this.isKeyDown;
+                    if (_this.isKeyDown == false)
+                        state.wasKeyReleased[_this.kCode] = true;
+                }
+            };
+            this.kCode = keyCode;
+            this.isKeyDown = isKeyDown;
+        }
+        KeyEvent.prototype.isKey = function () {
+            return true;
+        };
+        return KeyEvent;
+    })(Event);
+    Macro.KeyEvent = KeyEvent;
+    ;
+    var MouseEvent = (function (_super) {
+        __extends(MouseEvent, _super);
+        function MouseEvent(x, y, mouseClick) {
+            if (typeof mouseClick === "undefined") { mouseClick = false; }
+            var _this = this;
+            _super.call(this);
+            this.execute = function (state) {
+                state.mouseEventList.push(_this);
+            };
+            this.x = x;
+            this.y = y;
+            this.mouseClick = mouseClick;
+        }
+        MouseEvent.prototype.isKey = function () {
+            return false;
+        };
+        return MouseEvent;
+    })(Event);
+    Macro.MouseEvent = MouseEvent;
+    ;
+    var lastX = 0;
+    var lastY = 0;
+    var EventList = (function () {
+        function EventList(frameAt) {
+            this.list = [];
+            this.frameAt = frameAt;
+        }
+        EventList.prototype.immediatelyAddEvent = function (e) {
+            this.list.push(e);
+        };
+
+        EventList.prototype.addEvent = function (e) {
+            if (!this.nextEventList)
+                this.nextEventList = new EventList(this.frameAt + 1);
+            this.nextEventList.immediatelyAddEvent(e);
+        };
+        EventList.prototype.getNextEventList = function () {
+            if (!this.nextEventList)
+                this.nextEventList = new EventList(this.frameAt + 1);
+
+            //theoretically, multiple get calls could add multiple mouse events,
+            //but thats honestly not a big deal
+            this.nextEventList.immediatelyAddEvent(new MouseEvent(lastX, lastY));
+            return this.nextEventList;
+        };
+        return EventList;
+    })();
+    Macro.EventList = EventList;
+    ;
+    var State = (function () {
+        function State() {
+            var _this = this;
+            this.buttonDownBooleans = [];
+            this.wasKeyReleased = [];
+            this.mouseEventList = [];
+            this.eventList = new EventList(0);
+            this.updateFromEventList = function (eventList) {
+                _this.eventList = eventList;
+                _this.update();
+            };
+            this.update = function () {
+                _this.mouseEventList = [];
+                for (var i = 0; i < _this.eventList.list.length; ++i) {
+                    _this.eventList.list[i].execute(_this);
+                }
+                _this.eventList = _this.eventList.getNextEventList();
+            };
+            this.isKeyDown = function (key) {
+                return _this.buttonDownBooleans[key];
+            };
+            this.isKeyUp = function (key) {
+                return _this.buttonDownBooleans[key];
+            };
+            this.isKeyReleased = function (key) {
+                return _this.wasKeyReleased[key];
+            };
+            this.getMouseEvents = function () {
+                return _this.mouseEventList;
+            };
+            this.getFrame = function () {
+                return _this.eventList.frameAt;
+            };
+            this.generateButtonMapArray();
+        }
+        State.prototype.generateButtonMapArray = function () {
+            while (this.buttonDownBooleans.length < Button.buttonMax) {
+                this.buttonDownBooleans.push(false);
+                this.wasKeyReleased.push(false);
+            }
+        };
+        State.prototype.undoReleaseKeys = function () {
+            for (var i = 0; i < Button.buttonMax; ++i) {
+                this.wasKeyReleased[i] = false;
+            }
+        };
+        return State;
+    })();
+    Macro.State = State;
+    ;
+    Macro.currentState = new State();
+
+    function handleKeyPress(event) {
+        if (recording == false)
+            return;
+        Macro.currentState.eventList.addEvent(new KeyEvent(event.keyCode, true));
+    }
+    function handleKeyUp(event) {
+        if (recording == false)
+            return;
+        Macro.currentState.eventList.addEvent(new KeyEvent(event.keyCode, false));
+    }
+
+    function handleMouseUp(event) {
+        if (recording == false)
+            return;
+        Macro.currentState.eventList.addEvent(new MouseEvent(event.screenX, event.screenY, false));
+    }
+    function handleMouseDown(event) {
+        if (recording == false)
+            return;
+        Macro.currentState.eventList.addEvent(new MouseEvent(event.screenX, event.screenY, true));
+    }
+
+    $(document).keydown(handleKeyPress);
+    $(document).keyup(handleKeyUp);
+    $(document).mouseup(handleMouseUp);
+    $(document).mousedown(handleMouseDown);
+    $(document).mousemove(function (event) {
+        lastX = event.pageX;
+        lastY = event.pageY;
+    });
+})(Macro || (Macro = {}));
 var CombatPong;
 (function (CombatPong) {
     var Screen = (function () {
@@ -572,10 +810,23 @@ var CombatPong;
     var NetMan = (function () {
         function NetMan(stageData, frameData) {
             var _this = this;
+            this.getHostingState = function () {
+                return _this.peerMan.hostingState;
+            };
+            this.onHostingConnection = function () {
+                Macro.record();
+                console.log(_this.getHostingState());
+            };
+            this.onJoiningConnection = function () {
+                Macro.record();
+                console.log(_this.getHostingState());
+            };
             this.timeSinceStartMS = function () {
                 return _this.peerMan.timeSinceStartMS();
             };
             this.tick = function () {
+                Macro.currentState.update();
+                console.log(Macro.currentState.isKeyDown(87 /* W */));
                 _this.peerMan.tick();
             };
             this.frameData = frameData;
@@ -585,12 +836,11 @@ var CombatPong;
         }
         NetMan.prototype.sendMessage = function () {
         };
-        NetMan.prototype.isHosting = function () {
-        };
+
         NetMan.prototype.beginHosting = function (onHostingConnection) {
             this.peerMan.beginHosting(onHostingConnection);
         };
-        NetMan.prototype.beginJoinging = function (onJoinConnection, idToJoin) {
+        NetMan.prototype.beginJoining = function (onJoinConnection, idToJoin) {
             this.peerMan.beginJoining(onJoinConnection, idToJoin);
         };
         return NetMan;
@@ -639,9 +889,9 @@ var CombatPong;
             this.beginJoining = function (onJoinConnection, idToJoin) {
                 var conn = _this.peer.connect(idToJoin);
                 conn.on('open', function () {
-                    onJoinConnection(); //trigger callback
                     _this.hostingState = 1 /* Client */;
                     _this.zeroOutTheTime(); //Syncs time between client and host
+                    onJoinConnection(); //trigger callback
                 });
                 conn.on('data', function (data) {
                     alert(data);
@@ -652,9 +902,9 @@ var CombatPong;
                     var conn = dataConnection;
                     conn.on('open', function () {
                         //conn.send('HELLO PERSON :]');
-                        onHostingConnection(); //trigger callback
                         _this.hostingState = 0 /* Host */;
                         _this.zeroOutTheTime(); //Syncs time between client and host
+                        onHostingConnection(); //trigger callback
                     });
                 });
             };
@@ -925,6 +1175,8 @@ var Util;
 /// <reference path="game/world.ts" />
 /// <reference path="matchmaking/gamehostinginterface.ts" />
 /// <reference path="matchmaking/gamehostingmanager.ts" />
+/// <reference path="button.ts" />
+/// <reference path="macro.ts" />
 /// <reference path="meta/screen.ts" />
 /// <reference path="netman.ts" />
 /// <reference path="framedata.ts" />
@@ -945,57 +1197,6 @@ var CombatPong;
             screen.fitStageToScreen();
     };
 })(CombatPong || (CombatPong = {}));
-var Button;
-(function (Button) {
-    Button.buttonMax = 100;
-    (function (Code) {
-        Code[Code["Shift"] = 16] = "Shift";
-        Code[Code["Ctrl"] = 17] = "Ctrl";
-        Code[Code["Alt"] = 18] = "Alt";
-        Code[Code["Left"] = 37] = "Left";
-        Code[Code["Up"] = 38] = "Up";
-        Code[Code["Right"] = 39] = "Right";
-        Code[Code["Down"] = 40] = "Down";
-        Code[Code["Zero"] = 48] = "Zero";
-        Code[Code["One"] = 49] = "One";
-        Code[Code["Two"] = 50] = "Two";
-        Code[Code["Three"] = 51] = "Three";
-        Code[Code["Four"] = 52] = "Four";
-        Code[Code["Five"] = 53] = "Five";
-        Code[Code["Six"] = 54] = "Six";
-        Code[Code["Seven"] = 55] = "Seven";
-        Code[Code["Eight"] = 56] = "Eight";
-        Code[Code["Nine"] = 57] = "Nine";
-        Code[Code["A"] = 65] = "A";
-        Code[Code["B"] = 66] = "B";
-        Code[Code["C"] = 67] = "C";
-        Code[Code["D"] = 68] = "D";
-        Code[Code["E"] = 69] = "E";
-        Code[Code["F"] = 70] = "F";
-        Code[Code["G"] = 71] = "G";
-        Code[Code["H"] = 72] = "H";
-        Code[Code["I"] = 73] = "I";
-        Code[Code["J"] = 74] = "J";
-        Code[Code["K"] = 75] = "K";
-        Code[Code["L"] = 76] = "L";
-        Code[Code["M"] = 77] = "M";
-        Code[Code["N"] = 78] = "N";
-        Code[Code["O"] = 79] = "O";
-        Code[Code["P"] = 80] = "P";
-        Code[Code["Q"] = 81] = "Q";
-        Code[Code["R"] = 82] = "R";
-        Code[Code["S"] = 83] = "S";
-        Code[Code["T"] = 84] = "T";
-        Code[Code["U"] = 85] = "U";
-        Code[Code["V"] = 86] = "V";
-        Code[Code["W"] = 87] = "W";
-        Code[Code["X"] = 88] = "X";
-        Code[Code["Y"] = 89] = "Y";
-        Code[Code["Z"] = 90] = "Z";
-    })(Button.Code || (Button.Code = {}));
-    var Code = Button.Code;
-    ;
-})(Button || (Button = {}));
 var CombatPong;
 (function (CombatPong) {
     var DataMessage = (function () {
@@ -1040,174 +1241,4 @@ var CombatPong;
     CombatPong.Player = Player;
     ;
 })(CombatPong || (CombatPong = {}));
-var Macro;
-(function (Macro) {
-    //How to use:
-    //Record for one network tick, then call state.update() for your own network tick
-    //The problem is there needs to be a list of current event lists, and the list needs
-    //to be addable to easily. This is the next step.
-    var recording = false;
-    var currentEventList;
-
-    function record() {
-        recording = true;
-    }
-    Macro.record = record;
-    function stopRecording() {
-        recording = false;
-    }
-    Macro.stopRecording = stopRecording;
-
-    function handleKeyPress(key) {
-        if (recording == false)
-            return;
-        currentEventList.addEvent(new KeyEvent(key, true));
-    }
-    function handleKeyUp(key) {
-        if (recording == false)
-            return;
-        currentEventList.addEvent(new KeyEvent(key, false));
-    }
-
-    function handleMouseUp(event) {
-        if (recording == false)
-            return;
-        currentEventList.addEvent(new MouseEvent(event.screenX, event.screenY, false));
-    }
-    function handleMouseDown(event) {
-        if (recording == false)
-            return;
-        currentEventList.addEvent(new MouseEvent(event.screenX, event.screenY, true));
-    }
-
-    var KeyEvent = (function (_super) {
-        __extends(KeyEvent, _super);
-        function KeyEvent(keyCode, isKeyDown) {
-            this.keyCode = keyCode;
-            this.isKeyDown = isKeyDown;
-            _super.call(this);
-        }
-        KeyEvent.prototype.execute = function (state) {
-            if (this.keyCode < Button.buttonMax) {
-                state.buttonDownBooleans[this.keyCode] = this.isKeyDown;
-                if (this.isKeyDown == false)
-                    state.wasKeyReleased[this.keyCode] = true;
-            }
-        };
-        return KeyEvent;
-    })(Event);
-    Macro.KeyEvent = KeyEvent;
-    ;
-    var MouseEvent = (function (_super) {
-        __extends(MouseEvent, _super);
-        function MouseEvent(x, y, mouseClick) {
-            if (typeof mouseClick === "undefined") { mouseClick = false; }
-            this.x = x;
-            this.y = y;
-            this.mouseClick = mouseClick;
-            _super.call(this);
-        }
-        MouseEvent.prototype.execute = function (state) {
-            state.mouseEventList.push(this);
-        };
-        return MouseEvent;
-    })(Event);
-    Macro.MouseEvent = MouseEvent;
-    ;
-    var Event = (function () {
-        function Event() {
-        }
-        Event.prototype.execute = function (state) {
-        };
-        return Event;
-    })();
-    Macro.Event = Event;
-    ;
-
-    var lastX = 0;
-    var lastY = 0;
-    var EventList = (function () {
-        function EventList(frameAt) {
-            this.list = [];
-            this.frameAt = frameAt;
-        }
-        EventList.prototype.addEvent = function (e) {
-            if (!this.nextEventList)
-                this.nextEventList = new EventList(this.frameAt + 1);
-            this.nextEventList.immediatelyAddEvent(e);
-        };
-        EventList.prototype.immediatelyAddEvent = function (e) {
-            this.list.push(e);
-        };
-        EventList.prototype.getNextEventList = function () {
-            //theoretically, multiple get calls could add multiple mouse events,
-            //but thats honestly not a big deal
-            this.nextEventList.immediatelyAddEvent(new MouseEvent(lastX, lastY));
-            return this.nextEventList;
-        };
-        return EventList;
-    })();
-    Macro.EventList = EventList;
-    ;
-    var State = (function () {
-        function State() {
-            var _this = this;
-            this.buttonDownBooleans = [];
-            this.wasKeyReleased = [];
-            this.mouseEventList = [];
-            this.eventList = new EventList(0);
-            this.updateFromEventList = function (eventList) {
-                _this.eventList = eventList;
-                _this.update();
-            };
-            this.updateFromRecording = function () {
-                _this.eventList = currentEventList;
-            };
-            this.update = function () {
-                _this.mouseEventList = [];
-                for (var i = 0; i < _this.eventList.list.length; ++i) {
-                    _this.eventList.list[i].execute(_this);
-                }
-                _this.eventList = _this.eventList.getNextEventList();
-            };
-            this.isKeyDown = function (key) {
-                return _this.buttonDownBooleans[key];
-            };
-            this.isKeyUp = function (key) {
-                return _this.buttonDownBooleans[key];
-            };
-            this.isKeyReleased = function (key) {
-                return _this.wasKeyReleased[key];
-            };
-            this.getMouseEvents = function () {
-                return _this.mouseEventList;
-            };
-            this.currentEventList = new EventList(0);
-            this.generateButtonMapArray();
-        }
-        State.prototype.generateButtonMapArray = function () {
-            while (this.buttonDownBooleans.length < Button.buttonMax) {
-                this.buttonDownBooleans.push(false);
-                this.wasKeyReleased.push(false);
-            }
-        };
-        State.prototype.undoReleaseKeys = function () {
-            for (var i = 0; i < Button.buttonMax; ++i) {
-                this.wasKeyReleased[i] = false;
-            }
-        };
-        return State;
-    })();
-    Macro.State = State;
-    ;
-
-    $(document).keydown(handleKeyPress);
-    $(document).keyup(handleKeyPress);
-    $(document).mouseup(handleMouseUp);
-    $(document).mousedown(handleMouseDown);
-    $(document).mousemove(function (event) {
-        lastX = event.pageX;
-        lastY = event.pageY;
-    });
-})(Macro || (Macro = {}));
 //# sourceMappingURL=all.js.map

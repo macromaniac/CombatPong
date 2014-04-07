@@ -56,7 +56,7 @@ module CombatPong {
             this.gameHostingManager.stopHostingGame();
             this.gameHostingManager.requestList();
 
-			this.stageData.netMan.beginJoinging(
+			this.stageData.netMan.beginJoining(
 				this.gameHostingManager.onJoiningConnected, peerIDToJoin);
             //alert("Joined game " + game.toString());
         }
