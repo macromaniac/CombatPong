@@ -1,5 +1,7 @@
 ﻿/// <reference path="game/collision/collisionmanager.ts" />
 /// <reference path="game/collision/gameobject.ts" />
+/// <reference path="framedata.ts" />
+/// <reference path="netman.ts" />
 /// <reference path="game/collision/interactivegraphic.ts" />
 /// <reference path="game/ball.ts" />
 /// <reference path="game/game.ts" />

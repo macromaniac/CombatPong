@@ -28,6 +28,27 @@ declare module CombatPong {
     }
 }
 declare module CombatPong {
+    class FrameData {
+        public stageData: StageData;
+        public player1: Player;
+        public player2: Player;
+        constructor(stageData: StageData);
+    }
+}
+declare module CombatPong {
+    class NetMan {
+        public stageData: StageData;
+        public peerMan: PeerMan;
+        constructor(stageData: StageData);
+        public sendMessage(): void;
+        public isHosting(): void;
+        public beginHosting(onHostingConnection: () => any): void;
+        public beginJoinging(onJoinConnection: () => any, idToJoin: string): void;
+        public timeSinceStartMS(): number;
+        public tick(): void;
+    }
+}
+declare module CombatPong {
     class InteractiveGraphic {
         public stageData: StageData;
         public graphic: Kinetic.Group;
@@ -61,6 +82,10 @@ declare module CombatPong {
         public logicFrameLengthInMS: number;
         private stageData;
         private world;
+<<<<<<< HEAD
+=======
+        private netMan;
+>>>>>>> a6445a078907353a5e7306e8854783315e32face
         private gameHostingInterface;
         private netMan;
         constructor(stageData: StageData);
@@ -291,6 +316,7 @@ declare module CombatPong {
     }
 }
 declare module CombatPong {
+<<<<<<< HEAD
     class StageData {
         public isNetEnabled: boolean;
         public UI: Kinetic.Layer;
@@ -307,6 +333,12 @@ declare module CombatPong {
 }
 declare module MWG {
     enum ButtonCode {
+=======
+}
+declare module Button {
+    var buttonMax: number;
+    enum Code {
+>>>>>>> a6445a078907353a5e7306e8854783315e32face
         Shift = 16,
         Ctrl = 17,
         Alt = 18,
@@ -385,6 +417,8 @@ declare module CombatPong {
 declare module CombatPong {
 }
 declare module CombatPong {
+}
+declare module CombatPong {
     class InputMan {
     }
     class Player {
@@ -396,3 +430,52 @@ declare module CombatPong {
         public addEventList: (eventList: Macro.EventList) => void;
     }
 }
+<<<<<<< HEAD
+=======
+declare module Macro {
+    function record(): void;
+    function stopRecording(): void;
+    class KeyEvent extends Event {
+        public keyCode: number;
+        public isKeyDown: boolean;
+        constructor(keyCode: number, isKeyDown: boolean);
+        public execute(state: State): void;
+    }
+    class MouseEvent extends Event {
+        public x: number;
+        public y: number;
+        public mouseClick: boolean;
+        constructor(x: number, y: number, mouseClick?: boolean);
+        public execute(state: State): void;
+    }
+    class Event {
+        public execute(state: State): void;
+    }
+    class EventList {
+        public frameAt: number;
+        constructor(frameAt: number);
+        public list: Event[];
+        private nextEventList;
+        public addEvent(e: Event): void;
+        public immediatelyAddEvent(e: Event): void;
+        public getNextEventList(): EventList;
+    }
+    class State {
+        public buttonDownBooleans: boolean[];
+        public wasKeyReleased: boolean[];
+        public mouseEventList: MouseEvent[];
+        private eventList;
+        constructor();
+        private generateButtonMapArray();
+        private undoReleaseKeys();
+        public updateFromEventList: (eventList: EventList) => void;
+        public updateFromRecording: () => void;
+        public update: () => void;
+        public isKeyDown: (key: Button.Code) => boolean;
+        public isKeyUp: (key: Button.Code) => boolean;
+        public isKeyReleased: (key: Button.Code) => boolean;
+        public getMouseEvents: () => MouseEvent[];
+        public currentEventList: EventList;
+    }
+}
+>>>>>>> a6445a078907353a5e7306e8854783315e32face
