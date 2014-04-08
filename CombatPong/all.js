@@ -146,9 +146,23 @@ var CombatPong;
                 return _this.peerMan.timeSinceStartMS();
             };
             this.tick = function () {
+                if (_this.hasRecievedNecissaryData() == false)
+                    return false;
                 Macro.currentState.update();
+                if (_this.getHostingState() == 0 /* Host */)
+                    _this.broadCastData();
                 console.log(Macro.currentState.isKeyDown(87 /* W */));
                 _this.peerMan.tick();
+                return true;
+            };
+            this.hasRecievedNecissaryData = function () {
+                return true;
+            };
+            this.processUnhandledData = function () {
+                //This function processes unhandeled data
+            };
+            this.broadCastData = function () {
+                _this.processUnhandledData();
             };
             this.stageData = stageData;
             this.stageData.netMan = this;
@@ -325,11 +339,17 @@ var CombatPong;
                 _this.expectedTickNumber = _this.netMan.timeSinceStartMS() / _this.logicFrameLengthInMS;
 
                 while (_this.expectedTickNumber > _this.tickNumber) {
-                    if (_this.isNetworkTick(_this.tickNumber))
-                        _this.netMan.tick();
-                    if (_this.world)
-                        _this.world.tick();
-                    _this.tickNumber++;
+                    if (_this.isNetworkTick(_this.tickNumber)) {
+                        if (_this.netMan.tick()) {
+                            if (_this.world)
+                                _this.world.tick();
+                            _this.tickNumber++;
+                        }
+                    } else {
+                        if (_this.world)
+                            _this.world.tick();
+                        _this.tickNumber++;
+                    }
                 }
             };
             this.isNetworkTick = function (tickNo) {

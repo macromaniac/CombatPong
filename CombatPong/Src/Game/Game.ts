@@ -24,15 +24,21 @@
 			this.expectedTickNumber = this.netMan.timeSinceStartMS() / this.logicFrameLengthInMS;
 
 			while (this.expectedTickNumber > this.tickNumber) {
-				if (this.isNetworkTick(this.tickNumber))
-					this.netMan.tick();
-				if(this.world)
-					this.world.tick();
-				this.tickNumber++;
+				if (this.isNetworkTick(this.tickNumber)) {
+					if (this.netMan.tick()) {
+						if (this.world)
+							this.world.tick();
+						this.tickNumber++;
+					}
+				} else {
+					if (this.world)
+						this.world.tick();
+					this.tickNumber++;
+				}
 			}
 		}
 		private isNetworkTick = (tickNo: number): boolean => {
-			if (this.stageData.isNetEnabled == false || tickNo==0)
+			if (this.stageData.isNetEnabled == false || tickNo == 0)
 				return false;
 			var prevTickTime: number = this.logicFrameLengthInMS * (tickNo - 1);
 			var tickTime: number = this.logicFrameLengthInMS * tickNo;

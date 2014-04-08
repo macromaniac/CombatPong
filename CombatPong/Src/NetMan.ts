@@ -29,10 +29,24 @@
 		public timeSinceStartMS = ():number => {
 			return this.peerMan.timeSinceStartMS();
 		}
-		public tick = () => {
+		public tick = ():boolean => {
+			if (this.hasRecievedNecissaryData() == false)
+				return false;
 			Macro.currentState.update();
+			if (this.getHostingState() == CombatPong.HostingState.Host)
+				this.broadCastData();
 			console.log(Macro.currentState.isKeyDown(Button.Code.W));
 			this.peerMan.tick();
+			return true;
+		}
+		private hasRecievedNecissaryData = ():boolean =>{
+			return true;
+		}
+		private processUnhandledData = () => {
+			//This function processes unhandeled data
+		}
+		public broadCastData = () => {
+			this.processUnhandledData();
 		}
 	};
 }

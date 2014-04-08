@@ -47,7 +47,10 @@ declare module CombatPong {
         public onHostingConnection: () => void;
         public onJoiningConnection: () => void;
         public timeSinceStartMS: () => number;
-        public tick: () => void;
+        public tick: () => boolean;
+        private hasRecievedNecissaryData;
+        private processUnhandledData;
+        public broadCastData: () => void;
     }
 }
 declare module CombatPong {
