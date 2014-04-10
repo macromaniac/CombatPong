@@ -20,10 +20,17 @@
 		}
 		public onHostingConnection = () => {
 			Macro.record();
+			this.stageData.player1 = new Player(PlayerHostState.PlayerIsHost);
+			this.stageData.player2 = new Player(PlayerHostState.PlayerIsNotHost);
+			this.stageData.player1.acceptBrowserInput();
+			//this.stageData.player2 = new Player();
 			console.log(this.getHostingState());
 		}
 		public onJoiningConnection = () => {
 			Macro.record();
+			this.stageData.player1 = new Player(PlayerHostState.PlayerIsHost);
+			this.stageData.player2 = new Player(PlayerHostState.PlayerIsNotHost);
+			this.stageData.player2.acceptBrowserInput();
 			console.log(this.getHostingState());
 		}
 		public timeSinceStartMS = ():number => {

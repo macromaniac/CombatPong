@@ -12,6 +12,8 @@
 
 		public game: Game;
 		public netMan: NetMan;
+		public player1: Player;
+		public player2: Player;
 
 		private findNetworkSettings() {
 

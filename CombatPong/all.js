@@ -118,8 +118,6 @@ var CombatPong;
         //WHAT PLAYER DID WHAT ANYWAYS, ALSO THIS MAKES ORGANIZATION MUCH EASIER
         function FrameData(stageData) {
             this.stageData = stageData;
-            this.player1 = new CombatPong.Player();
-            this.player2 = new CombatPong.Player();
         }
         return FrameData;
     })();
@@ -136,10 +134,18 @@ var CombatPong;
             };
             this.onHostingConnection = function () {
                 Macro.record();
+                _this.stageData.player1 = new CombatPong.Player(0 /* PlayerIsHost */);
+                _this.stageData.player2 = new CombatPong.Player(1 /* PlayerIsNotHost */);
+                _this.stageData.player1.acceptBrowserInput();
+
+                //this.stageData.player2 = new Player();
                 console.log(_this.getHostingState());
             };
             this.onJoiningConnection = function () {
                 Macro.record();
+                _this.stageData.player1 = new CombatPong.Player(0 /* PlayerIsHost */);
+                _this.stageData.player2 = new CombatPong.Player(1 /* PlayerIsNotHost */);
+                _this.stageData.player2.acceptBrowserInput();
                 console.log(_this.getHostingState());
             };
             this.timeSinceStartMS = function () {
@@ -1236,26 +1242,37 @@ var CombatPong;
     })();
     CombatPong.InputMan = InputMan;
     ;
+    (function (PlayerHostState) {
+        PlayerHostState[PlayerHostState["PlayerIsHost"] = 0] = "PlayerIsHost";
+        PlayerHostState[PlayerHostState["PlayerIsNotHost"] = 1] = "PlayerIsNotHost";
+    })(CombatPong.PlayerHostState || (CombatPong.PlayerHostState = {}));
+    var PlayerHostState = CombatPong.PlayerHostState;
+    ;
 
     //player.setNetFrame(#)
     var Player = (function () {
-        function Player() {
+        function Player(hostState) {
             var _this = this;
             this.eventLists = [];
             this.frameAt = 0;
-            //This will return true if the network data exists, and false if the network data
-            //does not exist
-            this.tryToIncreaseState = function () {
-                if (_this.frameAt >= _this.eventLists.length)
-                    return false;
+            this.playerHostState = 1 /* PlayerIsNotHost */;
+            this.uploadPlayerData = false;
+            this.acceptBrowserInput = function () {
+                _this.state = Macro.currentState;
+                _this.uploadPlayerData = true;
+            };
+            this.canUpdate = function () {
+                return _this.frameAt < _this.eventLists.length;
+            };
+            this.update = function () {
                 _this.frameAt++;
                 _this.state.updateFromEventList(_this.eventLists[_this.frameAt]);
                 console.log("FrameAt: " + _this.frameAt + " FrameMax: " + _this.eventLists.length);
-                return true;
             };
             this.addEventList = function (eventList) {
                 _this.eventLists.push(eventList);
             };
+            this.playerHostState = hostState;
         }
         return Player;
     })();

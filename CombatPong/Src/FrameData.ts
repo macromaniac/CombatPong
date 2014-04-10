@@ -8,8 +8,6 @@
 		//WHAT PLAYER DID WHAT ANYWAYS, ALSO THIS MAKES ORGANIZATION MUCH EASIER
 		constructor(stageData: StageData) {
 			this.stageData = stageData;
-			this.player1 = new Player();
-			this.player2 = new Player();
 		}
 	};
 }

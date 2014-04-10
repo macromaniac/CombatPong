@@ -303,6 +303,8 @@ declare module CombatPong {
         public baseHeight: number;
         public game: Game;
         public netMan: NetMan;
+        public player1: Player;
+        public player2: Player;
         private findNetworkSettings();
         constructor(stage: Kinetic.Stage, baseWidth: number, baseHeight: number);
     }
@@ -389,12 +391,20 @@ declare module CombatPong {
 declare module CombatPong {
     class InputMan {
     }
+    enum PlayerHostState {
+        PlayerIsHost = 0,
+        PlayerIsNotHost = 1,
+    }
     class Player {
         public eventLists: Macro.EventList[];
         public state: Macro.State;
         public frameAt: number;
-        constructor();
-        public tryToIncreaseState: () => boolean;
+        public playerHostState: PlayerHostState;
+        public uploadPlayerData: boolean;
+        constructor(hostState: PlayerHostState);
+        public acceptBrowserInput: () => void;
+        public canUpdate: () => boolean;
+        public update: () => void;
         public addEventList: (eventList: Macro.EventList) => void;
     }
 }
