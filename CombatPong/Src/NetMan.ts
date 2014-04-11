@@ -47,7 +47,9 @@
 			return true;
 		}
 		private hasRecievedNecissaryData = ():boolean =>{
-			return true;
+			if (this.stageData.player1.canUpdate() && this.stageData.player2.canUpdate())
+				return true;
+			return false;
 		}
 		private processUnhandledData = () => {
 			//This function processes unhandeled data

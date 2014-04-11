@@ -162,7 +162,9 @@ var CombatPong;
                 return true;
             };
             this.hasRecievedNecissaryData = function () {
-                return true;
+                if (_this.stageData.player1.canUpdate() && _this.stageData.player2.canUpdate())
+                    return true;
+                return false;
             };
             this.processUnhandledData = function () {
                 //This function processes unhandeled data
