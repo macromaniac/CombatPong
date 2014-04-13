@@ -33,7 +33,7 @@
 				onJoinConnection(); //trigger callback
 			});
 			conn.on('data', (data) => {
-				alert(data);
+                recvData(data);
 			});
 		}
 
@@ -46,6 +46,9 @@
 					this.zeroOutTheTime(); //Syncs time between client and host
 					onHostingConnection(); //trigger callback
 				});
+                conn.on('data', (data) => {
+                    recvData(data);
+                });
 			});
 		}
 

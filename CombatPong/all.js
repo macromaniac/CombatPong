@@ -126,6 +126,9 @@ var CombatPong;
 })(CombatPong || (CombatPong = {}));
 var CombatPong;
 (function (CombatPong) {
+    function recvData(data) {
+    }
+    CombatPong.recvData = recvData;
     var NetMan = (function () {
         function NetMan(stageData) {
             var _this = this;
@@ -184,6 +187,9 @@ var CombatPong;
         };
         NetMan.prototype.beginJoining = function (onJoinConnection, idToJoin) {
             this.peerMan.beginJoining(onJoinConnection, idToJoin);
+        };
+
+        NetMan.prototype.recieveData = function (data) {
         };
         return NetMan;
     })();
@@ -921,7 +927,7 @@ var CombatPong;
                     onJoinConnection(); //trigger callback
                 });
                 conn.on('data', function (data) {
-                    alert(data);
+                    CombatPong.recvData(data);
                 });
             };
             this.beginHosting = function (onHostingConnection) {
@@ -932,6 +938,9 @@ var CombatPong;
                         _this.hostingState = 0 /* Host */;
                         _this.zeroOutTheTime(); //Syncs time between client and host
                         onHostingConnection(); //trigger callback
+                    });
+                    conn.on('data', function (data) {
+                        CombatPong.recvData(data);
                     });
                 });
             };
