@@ -170,6 +170,9 @@ var CombatPong;
                 return false;
             };
             this.processUnhandledData = function () {
+                for (var i = 0; i < _this.unhandledData.length; ++i) {
+                    //process data
+                }
                 //This function processes unhandeled data
             };
             this.broadCastData = function () {
@@ -1250,6 +1253,7 @@ var CombatPong;
         }
         return DataMessage;
     })();
+    CombatPong.DataMessage = DataMessage;
 })(CombatPong || (CombatPong = {}));
 //Handles input for multiple users
 var CombatPong;

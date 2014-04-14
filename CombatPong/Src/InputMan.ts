@@ -20,6 +20,10 @@ module CombatPong {
 		public acceptBrowserInput = () => {
 			this.state = Macro.currentState;
 			this.uploadPlayerData = true;
+			
+
+
+
 		}
 		public canUpdate = (): boolean=> {
 			return this.frameAt < this.eventLists.length;

@@ -4,6 +4,8 @@
 	export class NetMan {
 		stageData: StageData;
 		peerMan: PeerMan;
+
+		unhandledData: DataMessage[];
 		constructor(stageData: StageData) {
 			this.stageData = stageData;
 			this.stageData.netMan = this;
@@ -54,6 +56,9 @@
 			return false;
 		}
 		private processUnhandledData = () => {
+			for (var i = 0; i < this.unhandledData.length; ++i) {
+				//process data
+			}
 			//This function processes unhandeled data
 		}
         public recieveData(data:string) {

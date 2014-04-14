@@ -40,6 +40,7 @@ declare module CombatPong {
     class NetMan {
         public stageData: StageData;
         public peerMan: PeerMan;
+        public unhandledData: DataMessage[];
         constructor(stageData: StageData);
         public sendMessage(): void;
         public getHostingState: () => HostingState;
@@ -392,6 +393,9 @@ declare module CombatPong {
     enum MSGType {
         SYS = 0,
         KEYPRESS = 1,
+    }
+    class DataMessage {
+        constructor();
     }
 }
 declare module CombatPong {
