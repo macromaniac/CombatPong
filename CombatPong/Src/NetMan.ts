@@ -1,4 +1,6 @@
 ﻿module CombatPong {
+    export function recvData(data:string) {
+    }
 	export class NetMan {
 		stageData: StageData;
 		peerMan: PeerMan;
@@ -54,6 +56,8 @@
 		private processUnhandledData = () => {
 			//This function processes unhandeled data
 		}
+        public recieveData(data:string) {
+        }
 		public broadCastData = () => {
 			this.processUnhandledData();
 		}

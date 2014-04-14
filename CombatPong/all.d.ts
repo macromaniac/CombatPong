@@ -36,6 +36,7 @@ declare module CombatPong {
     }
 }
 declare module CombatPong {
+    function recvData(data: string): void;
     class NetMan {
         public stageData: StageData;
         public peerMan: PeerMan;
@@ -50,6 +51,7 @@ declare module CombatPong {
         public tick: () => boolean;
         private hasRecievedNecissaryData;
         private processUnhandledData;
+        public recieveData(data: string): void;
         public broadCastData: () => void;
     }
 }
