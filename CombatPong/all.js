@@ -1228,6 +1228,14 @@ var CombatPong;
 })(CombatPong || (CombatPong = {}));
 var CombatPong;
 (function (CombatPong) {
+    //Data message should send the key presses, the player number is assigned
+    //using the SYS message enum
+    (function (MSGType) {
+        MSGType[MSGType["SYS"] = 0] = "SYS";
+        MSGType[MSGType["KEYPRESS"] = 1] = "KEYPRESS";
+    })(CombatPong.MSGType || (CombatPong.MSGType = {}));
+    var MSGType = CombatPong.MSGType;
+    ;
     var DataMessage = (function () {
         function DataMessage() {
         }

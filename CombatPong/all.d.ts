@@ -387,6 +387,10 @@ declare module Util {
 declare module CombatPong {
 }
 declare module CombatPong {
+    enum MSGType {
+        SYS = 0,
+        KEYPRESS = 1,
+    }
 }
 declare module CombatPong {
     class InputMan {
